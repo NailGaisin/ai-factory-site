@@ -1,0 +1,168 @@
+﻿export function AiDispatcher({ leads }: { leads: any[] }) {
+  const queue = [...leads]
+    .filter(
+      (lead) =>
+        lead.contactResult !== "won" &&
+        lead.contactResult !== "lost"
+    )
+    .sort(
+      (a, b) =>
+        (b.aiScore ?? -1) -
+        (a.aiScore ?? -1)
+    )
+    .slice(0, 5);
+
+  return (
+    <section
+      style={{
+        marginBottom: 28,
+        padding: 22,
+        borderRadius: 16,
+        background: "#ffffff",
+        border: "2px solid #2563eb",
+        boxShadow: "0 4px 16px rgba(15,23,42,.08)",
+      }}
+    >
+      <div style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            color: "#1d4ed8",
+            fontSize: 12,
+            fontWeight: 900,
+            letterSpacing: ".08em",
+            marginBottom: 5,
+          }}
+        >
+          AI SALES DISPATCHER
+        </div>
+
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 24,
+            color: "#111827",
+          }}
+        >
+          Р§С‚Рѕ РґРµР»Р°С‚СЊ СЃРµР№С‡Р°СЃ
+        </h2>
+
+        <p
+          style={{
+            margin: "6px 0 0",
+            color: "#374151",
+            fontSize: 14,
+          }}
+        >
+          РџСЂРёРѕСЂРёС‚РµС‚РЅР°СЏ РѕС‡РµСЂРµРґСЊ Р·Р°СЏРІРѕРє РґР»СЏ РјРµРЅРµРґР¶РµСЂР°
+        </p>
+      </div>
+
+      {queue.length === 0 ? (
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 10,
+            background: "#f1f5f9",
+            color: "#111827",
+            fontWeight: 700,
+          }}
+        >
+          РђРєС‚РёРІРЅС‹С… Р·Р°СЏРІРѕРє РЅРµС‚.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {queue.map((lead, index) => (
+            <div
+              key={lead.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "42px 1fr auto",
+                gap: 14,
+                alignItems: "center",
+                padding: "13px 15px",
+                borderRadius: 11,
+                background: "#f8fafc",
+                border: "1px solid #cbd5e1",
+              }}
+            >
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  display: "grid",
+                  placeItems: "center",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  fontWeight: 900,
+                }}
+              >
+                {index + 1}
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    color: "#111827",
+                    fontSize: 15,
+                  }}
+                >
+                  {lead.name}
+                  {lead.company
+                    ? ` вЂ” ${lead.company}`
+                    : ""}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    color: "#374151",
+                    fontSize: 13,
+                  }}
+                >
+                  {lead.aiTemperature === "hot"
+                    ? "рџ”Ґ HOT"
+                    : lead.aiTemperature === "warm"
+                      ? "рџџЎ WARM"
+                      : lead.aiTemperature === "cold"
+                        ? "рџ”µ COLD"
+                        : "вљЄ Р‘РµР· РѕС†РµРЅРєРё"}
+                  {" вЂў "}
+                  AI Score: {lead.aiScore ?? "вЂ”"}/100
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 5,
+                    color: "#111827",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  {lead.aiRecommendedAction ||
+                    "!2O70BLAO A :;85=B><"}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  color: "#1d4ed8",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {lead.contactResult === "thinking"
+                 ? "Клиент думает"
+                  : lead.contactResult === "contacted"
+                   ? "Контакт установлен"
+                   : "Результат не определён"}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

@@ -1,0 +1,331 @@
+"use client";
+
+import { useState } from "react";
+
+type Analysis = {
+  score: number;
+  temperature: "hot" | "warm" | "cold";
+  summary: string;
+  needs: string;
+  recommendedAction: string;
+  firstReply: string;
+};
+
+type Props = {
+  lead: {
+    id: string;
+    name: string;
+    company?: string | null;
+    contact: string;
+    niche?: string | null;
+  };
+  initialAnalysis?: Analysis | null;
+};
+
+export function AiAnalyzeButton({
+  lead,
+  initialAnalysis = null,
+}: Props) {
+  const [analysis, setAnalysis] =
+    useState<Analysis | null>(initialAnalysis);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  async function analyze() {
+    setLoading(true);
+    setError("");
+    setSaved(false);
+
+    try {
+      const response = await fetch(
+        "/api/ai/analyze-lead",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ lead }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || "Ошибка AI-анализа"
+        );
+      }
+
+      const nextAnalysis =
+        data.analysis as Analysis;
+
+      setAnalysis(nextAnalysis);
+
+      const saveResponse = await fetch(
+        `/api/admin/leads/${lead.id}/ai`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            score: nextAnalysis.score,
+            temperature:
+              nextAnalysis.temperature,
+            summary:
+              nextAnalysis.summary,
+            needs:
+              nextAnalysis.needs,
+            recommendedAction:
+              nextAnalysis.recommendedAction,
+            firstReply:
+              nextAnalysis.firstReply,
+          }),
+        }
+      );
+
+      const saveData =
+        await saveResponse.json();
+
+      if (
+        !saveResponse.ok ||
+        !saveData.ok
+      ) {
+        throw new Error(
+          saveData.error ||
+            "AI-анализ получен, но не сохранён в CRM"
+        );
+      }
+
+      setSaved(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ошибка AI-анализа"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const temperatureLabel =
+    analysis?.temperature === "hot"
+      ? "🔥 HOT"
+      : analysis?.temperature === "warm"
+        ? "🟡 WARM"
+        : analysis?.temperature === "cold"
+          ? "🔵 COLD"
+          : "";
+
+  return (
+    <div className="admin-ai">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 20,
+            }}
+          >
+            AI-анализ заявки
+          </h3>
+
+          <p
+            style={{
+              margin: "6px 0 0",
+              color: "#64748b",
+            }}
+          >
+            Локальный анализ через Qwen
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={analyze}
+          disabled={loading}
+          style={{
+            border: 0,
+            borderRadius: 10,
+            padding: "11px 18px",
+            background: loading
+              ? "#94a3b8"
+              : "#2563eb",
+            color: "#ffffff",
+            fontWeight: 700,
+            cursor: loading
+              ? "wait"
+              : "pointer",
+          }}
+        >
+          {loading
+            ? "Анализирую..."
+            : "🤖 AI-анализ"}
+        </button>
+      </div>
+
+      {error && (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            borderRadius: 10,
+            background: "#fee2e2",
+            color: "#991b1b",
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {analysis && (
+        <div
+          style={{
+            marginTop: 20,
+            display: "grid",
+            gridTemplateColumns:
+              "180px minmax(0, 1fr)",
+            gap: 20,
+          }}
+        >
+          <div
+            style={{
+              padding: 18,
+              borderRadius: 12,
+              background: "#e2e8f0",
+              textAlign: "center",
+              alignSelf: "start",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#475569",
+              }}
+            >
+              ОЦЕНКА
+            </div>
+
+            <div
+              style={{
+                fontSize: 42,
+                fontWeight: 800,
+                margin: "6px 0",
+                color: "#0f172a",
+              }}
+            >
+              {analysis.score}
+            </div>
+
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: "#0f172a",
+              }}
+            >
+              {temperatureLabel}
+            </div>
+
+            {saved && (
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#166534",
+                }}
+              >
+                 !>E@0=5=>
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 14,
+              minWidth: 0,
+            }}
+          >
+            <div>
+              <strong> 57N<5</strong>
+              <div style={{ marginTop: 4 }}>
+                {analysis.summary}
+              </div>
+            </div>
+
+            <div>
+              <strong>
+                Потребности клиента
+              </strong>
+              <div style={{ marginTop: 4 }}>
+                {analysis.needs}
+              </div>
+            </div>
+
+            <div>
+              <strong>
+                 5:><5=4C5<>5 459AB285
+              </strong>
+              <div style={{ marginTop: 4 }}>
+                {analysis.recommendedAction}
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 10,
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+              }}
+            >
+              <strong>
+                Первый ответ клиенту
+              </strong>
+              <div
+                style={{
+                  marginTop: 6,
+                  lineHeight: 1.5,
+                }}
+              >
+                {analysis.firstReply}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!analysis &&
+        !loading &&
+        !error && (
+          <div
+            style={{
+              marginTop: 18,
+              padding: 14,
+              borderRadius: 10,
+              background: "#f1f5f9",
+              color: "#475569",
+            }}
+          >
+            Нажмите «🤖 AI-анализ», чтобы
+            получить оценку заявки.
+          </div>
+        )}
+    </div>
+  );
+}

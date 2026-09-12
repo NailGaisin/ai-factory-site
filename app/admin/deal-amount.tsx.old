@@ -1,0 +1,119 @@
+﻿"use client";
+
+import { useState } from "react";
+
+export function DealAmount({
+  id,
+  initialAmount = 0,
+}: {
+  id: string;
+  initialAmount?: number | null;
+}) {
+  const [amount, setAmount] = useState(
+    initialAmount ?? 0
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function saveAmount() {
+    setSaving(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/leads/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            deal_amount: amount,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ СЃСѓРјРјСѓ");
+      }
+    } catch (error) {
+      console.error("Deal amount error:", error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        paddingTop: 16,
+        borderTop: "1px solid #e5e7eb",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: 12,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          marginBottom: 8,
+        }}
+      >
+        Сумма сделки
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="number"
+          min="0"
+          step="1000"
+          value={amount}
+          disabled={saving}
+          onChange={(event) =>
+            setAmount(Number(event.target.value))
+          }
+          style={{
+            width: 180,
+            padding: "9px 11px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#111827",
+          }}
+        />
+
+        <span
+          style={{
+            color: "#64748b",
+            fontSize: 13,
+          }}
+        >
+          в‚Ѕ
+        </span>
+
+        <button
+          type="button"
+          disabled={saving}
+          onClick={saveAmount}
+          style={{
+            padding: "9px 13px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#0f172a",
+            color: "#ffffff",
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: saving ? "wait" : "pointer",
+          }}
+        >
+          {saving ? "!>E@0=5=85..." : "!>E@0=8BL"}
+        </button>
+      </div>
+    </div>
+  );
+}

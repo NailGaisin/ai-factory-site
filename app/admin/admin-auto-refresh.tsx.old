@@ -1,0 +1,50 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export function AdminAutoRefresh() {
+  const router = useRouter();
+
+  useEffect(() => {
+    let active = true;
+
+    async function runChecks() {
+      try {
+        await Promise.all([
+          fetch("/api/admin/check-overdue", {
+            method: "POST",
+            cache: "no-store",
+          }),
+          fetch("/api/admin/check-followups", {
+            method: "POST",
+            cache: "no-store",
+          }),
+        ]);
+      } catch (error) {
+        console.error(
+          "CRM automatic checks error:",
+          error
+        );
+      }
+
+      if (active) {
+        router.refresh();
+      }
+    }
+
+    runChecks();
+
+    const interval = window.setInterval(
+      runChecks,
+      10000
+    );
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [router]);
+
+  return null;
+}

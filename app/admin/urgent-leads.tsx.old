@@ -1,0 +1,471 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type ContactResult =
+  | "not_contacted"
+  | "contacted"
+  | "thinking"
+  | "won"
+  | "lost"
+  | null;
+
+type Lead = {
+  id: string;
+  name: string;
+  company: string;
+  contact: string;
+  createdAt: string;
+  aiScore: number | null;
+  aiTemperature: "hot" | "warm" | "cold" | null;
+  aiRecommendedAction: string | null;
+  contactResult: ContactResult;
+};
+
+type Props = {
+  leads: Lead[];
+};
+
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.max(
+    0,
+    Math.floor(ms / 1000)
+  );
+
+  const days = Math.floor(
+    totalSeconds / 86400
+  );
+
+  const hours = Math.floor(
+    (totalSeconds % 86400) / 3600
+  );
+
+  const minutes = Math.floor(
+    (totalSeconds % 3600) / 60
+  );
+
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}д ${hours}ч`;
+  }
+
+  if (hours > 0) {
+    return `${hours}ч ${minutes}м`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}м ${seconds}с`;
+  }
+
+  return `${seconds}с`;
+}
+
+export function UrgentLeads({ leads }: Props) {
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    setMounted(true);
+    setNow(Date.now());
+
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const urgentLeads = useMemo(() => {
+    return leads
+      .filter((lead) => {
+        const notContacted =
+          lead.contactResult === null ||
+          lead.contactResult === "not_contacted";
+
+        const createdTime =
+          new Date(lead.createdAt).getTime();
+
+        const age = mounted
+          ? now - createdTime
+          : 15 * 60 * 1000;
+
+        return (
+          notContacted &&
+          age >= 15 * 60 * 1000
+        );
+      })
+      .map((lead) => {
+        const createdTime =
+          new Date(lead.createdAt).getTime();
+
+        return {
+          ...lead,
+          elapsed: mounted
+            ? Math.max(0, now - createdTime)
+            : 15 * 60 * 1000,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+      )
+      .slice(0, 5);
+  }, [leads, mounted, now]);
+
+  async function updateContactResult(
+    leadId: string,
+    contactResult:
+      | "contacted"
+      | "thinking"
+      | "lost"
+  ) {
+    setSavingId(leadId);
+
+    try {
+      const response = await fetch(
+        `/api/admin/leads/${encodeURIComponent(
+          leadId
+        )}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contact_result: contactResult,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ??
+            "Не удалось обновить заявку"
+        );
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Ошибка обновления заявки"
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  if (urgentLeads.length === 0) {
+    return (
+      <section
+        style={{
+          marginBottom: 24,
+          padding: 18,
+          border: "1px solid #d1d5db",
+          borderRadius: 14,
+          background: "#f9fafb",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 800,
+            marginBottom: 4,
+          }}
+        >
+          Требуют контакта
+        </div>
+
+        <div
+          style={{
+            color: "#6b7280",
+            fontSize: 14,
+          }}
+        >
+          Просроченных заявок нет.
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      style={{
+        marginBottom: 24,
+        padding: 18,
+        border: "2px solid #dc2626",
+        borderRadius: 14,
+        background: "#ffffff",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 14,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+            }}
+          >
+            Требуют контакта → Просроченные заявки
+          </div>
+
+          <div
+            style={{
+              marginTop: 4,
+              color: "#991b1b",
+              fontSize: 13,
+            }}
+          >
+            Более 15 минут без контакта
+          </div>
+        </div>
+
+        <div
+          style={{
+            minWidth: 32,
+            height: 32,
+            padding: "0 10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 999,
+            background: "#fee2e2",
+            color: "#991b1b",
+            fontWeight: 800,
+          }}
+        >
+          {urgentLeads.length}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        {urgentLeads.map((lead) => {
+          const ageMinutes = Math.floor(
+            lead.elapsed / 60000
+          );
+
+          const hours = Math.floor(
+            ageMinutes / 60
+          );
+
+          const elapsed =
+            hours > 0
+              ? `${hours}ч ${ageMinutes % 60}м`
+              : `${ageMinutes}м`;
+
+          const saving =
+            savingId === lead.id;
+
+          return (
+            <div
+              key={lead.id}
+              style={{
+                padding: 14,
+                border: "2px solid #dc2626",
+                borderRadius: 12,
+                background: "#ffffff",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 16,
+                    }}
+                  >
+                    {lead.name}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 3,
+                      color: "#4b5563",
+                      fontSize: 14,
+                    }}
+                  >
+                    {lead.company}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 3,
+                      fontSize: 13,
+                      color: "#6b7280",
+                    }}
+                  >
+                    {lead.contact}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      color: "#b91c1c",
+                    }}
+                  >
+                    {elapsed}
+                  </div>
+
+                  {lead.aiScore !== null && (
+                    <div
+                      style={{
+                        marginTop: 3,
+                        fontSize: 12,
+                        color: "#6b7280",
+                      }}
+                    >
+                      AI: {lead.aiScore}/100
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {lead.aiRecommendedAction && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: 9,
+                    borderRadius: 8,
+                    background: "#f9fafb",
+                    fontSize: 13,
+                  }}
+                >
+                  <strong>
+                    !;54CNI89 H03:
+                  </strong>{" "}
+                  {lead.aiRecommendedAction}
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginTop: 12,
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    updateContactResult(
+                      lead.id,
+                      "contacted"
+                    )
+                  }
+                  style={{
+                    border:
+                      "1px solid #86efac",
+                    background: "#f0fdf4",
+                    color: "#166534",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontWeight: 700,
+                    cursor: saving
+                      ? "default"
+                      : "pointer",
+                  }}
+                >
+                  {saving
+                    ? "!>E@0=ON..."
+                    : " !2O70;8AL"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    updateContactResult(
+                      lead.id,
+                      "thinking"
+                    )
+                  }
+                  style={{
+                    border:
+                      "1px solid #fde68a",
+                    background: "#fffbeb",
+                    color: "#92400e",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontWeight: 700,
+                    cursor: saving
+                      ? "default"
+                      : "pointer",
+                  }}
+                >
+                  Думает
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    updateContactResult(
+                      lead.id,
+                      "lost"
+                    )
+                  }
+                  style={{
+                    border:
+                      "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#4b5563",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontWeight: 700,
+                    cursor: saving
+                      ? "default"
+                      : "pointer",
+                  }}
+                >
+                  Отказ
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

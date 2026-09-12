@@ -1,0 +1,392 @@
+
+        .crm {
+          min-height: 100vh;
+          background: #070a0f;
+          color: #f4f6f8;
+          padding: 18px 24px 40px;
+          font-family:
+            Inter, Arial, sans-serif;
+        }
+
+        .wrap {
+          max-width: 1560px;
+          margin: 0 auto;
+        }
+
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 18px;
+        }
+
+        .brand {
+          display: flex;
+          gap: 14px;
+          align-items: center;
+        }
+
+        .logo {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          background: #fff;
+          color: #080a0f;
+          display: grid;
+          place-items: center;
+          font-weight: 900;
+        }
+
+        .overline {
+          color: #737d8d;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: .15em;
+          text-transform: uppercase;
+        }
+
+        h1 {
+          margin: 3px 0 0;
+          font-size: 24px;
+          letter-spacing: -.04em;
+        }
+
+        .subtitle {
+          color: #7e8898;
+          font-size: 14px;
+          margin-top: 4px;
+        }
+
+        button,
+        input,
+        select {
+          font: inherit;
+        }
+
+        button {
+          cursor: pointer;
+        }
+
+        .button {
+          border: 1px solid #2a3342;
+          background: #111620;
+          color: #eef1f5;
+          border-radius: 10px;
+          padding: 10px 14px;
+          font-size: 12px;
+          font-weight: 750;
+        }
+
+        .button:hover {
+          background: #181f2b;
+        }
+
+        .button.primary {
+          background: #fff;
+          color: #080a0f;
+          border-color: #fff;
+        }
+
+        .stats {
+          display: grid;
+          grid-template-columns:
+            repeat(6, 1fr);
+          gap: 9px;
+          margin-bottom: 18px;
+        }
+
+        .stat {
+          background: #10141c;
+          border: 1px solid #202735;
+          border-radius: 15px;
+          padding: 13px 15px;
+        }
+
+        .statLabel {
+          color: #788294;
+          font-size: 12px;
+          margin-bottom: 8px;
+        }
+
+        .statValue {
+          font-size: 22px;
+          font-weight: 850;
+          letter-spacing: -.03em;
+        }
+
+        .statHint {
+          color: #596475;
+          font-size: 10px;
+          margin-top: 5px;
+        }
+
+        .notice {
+          background: #111822;
+          border: 1px solid #283243;
+          color: #bac3d0;
+          border-radius: 10px;
+          padding: 11px 13px;
+          margin-bottom: 15px;
+          font-size: 12px;
+        }
+
+        .notice.error {
+          color: #ffb5bd;
+          background: #241216;
+          border-color: #5d3038;
+        }
+
+        .toolbar {
+          display: grid;
+          grid-template-columns: 1fr 190px 120px;
+          gap: 10px;
+          margin-bottom: 22px;
+        }
+
+        .input,
+        .select {
+          box-sizing: border-box;
+          width: 100%;
+          border: 1px solid #283141;
+          border-radius: 10px;
+          background: #10151e;
+          color: #edf0f5;
+          padding: 11px 13px;
+          outline: none;
+        }
+
+        .select option {
+          background: #10151e;
+        }
+
+        .heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 11px;
+        }
+
+        .heading h2 {
+          margin: 0;
+          font-size: 18px;
+        }
+
+        .heading span {
+          color: #697486;
+          font-size: 12px;
+        }
+
+        .leads {
+          display: grid;
+          gap: 9px;
+        }
+
+        .lead {
+          background: #10141c;
+          border: 1px solid #202735;
+          border-radius: 13px;
+          padding: 14px 16px;
+        }
+
+        .leadHeader {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+        }
+
+        .person {
+          display: flex;
+          gap: 9px;
+        }
+
+        .avatar {
+          width: 42px;
+          height: 42px;
+          flex: 0 0 42px;
+          border-radius: 12px;
+          background: #1b222e;
+          display: grid;
+          place-items: center;
+          font-weight: 800;
+          color: #dfe4eb;
+        }
+
+        .name {
+          font-size: 17px;
+          font-weight: 800;
+        }
+
+        .company {
+          color: #a2abb9;
+          font-size: 12px;
+          margin-top: 3px;
+        }
+
+        .meta {
+          color: #6e798a;
+          font-size: 12px;
+          margin-top: 6px;
+        }
+
+        .badges {
+          display: flex;
+          gap: 6px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .badge {
+          border: 1px solid #303949;
+          background: #161c26;
+          border-radius: 999px;
+          padding: 6px 9px;
+          font-size: 10px;
+          font-weight: 750;
+          color: #bac3cf;
+        }
+
+        .hot {
+          color: #ffb4bd;
+          border-color: #713c45;
+          background: #28151a;
+        }
+
+        .warm {
+          color: #e5c47e;
+          border-color: #66532d;
+          background: #211c12;
+        }
+
+        .cold {
+          color: #a5c5ee;
+          border-color: #354c68;
+          background: #121c2a;
+        }
+
+        .content {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 270px;
+          gap: 9px;
+          margin-top: 15px;
+        }
+
+        .panel {
+          background: #0c1017;
+          border: 1px solid #202836;
+          border-radius: 12px;
+          padding: 12px;
+        }
+
+        .label {
+          color: #687486;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+        }
+
+        .text {
+          color: #cbd2dc;
+          font-size: 12px;
+          line-height: 1.55;
+        }
+
+        .aiGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 9px;
+          margin-top: 10px;
+        }
+
+        .ai {
+          background: #111620;
+          border: 1px solid #222b39;
+          border-radius: 10px;
+          padding: 10px;
+        }
+
+        .reply {
+          grid-column: 1 / -1;
+        }
+
+        .controls {
+          display: grid;
+          gap: 9px;
+        }
+
+        .control label {
+          display: block;
+          color: #687486;
+          font-size: 9px;
+          font-weight: 800;
+          text-transform: uppercase;
+          margin-bottom: 5px;
+        }
+
+        .control select,
+        .control input {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #293343;
+          background: #151b25;
+          color: #e8edf3;
+          border-radius: 8px;
+          padding: 9px;
+          font-size: 12px;
+        }
+
+        .empty {
+          padding: 55px;
+          text-align: center;
+          color: #687487;
+          border: 1px dashed #293342;
+          border-radius: 14px;
+        }
+
+        @media (max-width: 1000px) {
+          .stats {
+            grid-template-columns: repeat(3, 1fr);
+          }
+
+          .content {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 650px) {
+          .crm {
+            padding: 15px;
+          }
+
+          .stats {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .toolbar {
+            grid-template-columns: 1fr;
+          }
+
+          .leadHeader {
+            flex-direction: column;
+          }
+
+          .badges {
+            justify-content: flex-start;
+          }
+
+          .aiGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .reply {
+            grid-column: auto;
+          }
+        }
+      
+.crm-lead-focus {
+  outline: 2px solid #60a5fa !important;
+  box-shadow: 0 0 0 6px rgba(96,165,250,.15) !important;
+  transition: outline .2s ease, box-shadow .2s ease;
+}

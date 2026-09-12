@@ -1,0 +1,123 @@
+import { NextResponse } from "next/server";
+import { getAdminSupabase } from "@/lib/supabase";
+
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function PATCH(
+  request: Request,
+  { params }: Params
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    const score = Number(body.score);
+    const temperature =
+      body.temperature;
+
+    if (
+      !Number.isFinite(score) ||
+      score < 0 ||
+      score > 100
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Некорректный AI score",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !["hot", "warm", "cold"].includes(
+        temperature
+      )
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Некорректная AI temperature",
+        },
+        { status: 400 }
+      );
+    }
+
+    const supabase =
+      getAdminSupabase();
+
+    if (!supabase) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Supabase не настроен",
+        },
+        { status: 500 }
+      );
+    }
+
+    const { data, error } =
+      await supabase
+        .from("leads")
+        .update({
+          ai_score: Math.round(score),
+          ai_temperature: temperature,
+          ai_summary:
+            body.summary ?? null,
+          ai_needs:
+            body.needs ?? null,
+          ai_recommended_action:
+            body.recommendedAction ??
+            null,
+          ai_first_reply:
+            body.firstReply ?? null,
+        })
+        .eq("id", id)
+        .select(
+          "id, ai_score, ai_temperature, ai_summary, ai_needs, ai_recommended_action, ai_first_reply"
+        )
+        .single();
+
+    if (error) {
+      console.error(
+        "AI save error:",
+        error
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      lead: data,
+    });
+  } catch (error) {
+    console.error(
+      "AI PATCH error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Ошибка сохранения AI-анализа",
+      },
+      { status: 500 }
+    );
+  }
+}

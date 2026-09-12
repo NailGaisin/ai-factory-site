@@ -1,0 +1,209 @@
+﻿"use client";
+
+import { useMemo, useState } from "react";
+
+type Lead = {
+  id: string;
+  name: string;
+  company?: string | null;
+  contact: string;
+  niche?: string | null;
+  status: "new" | "in_progress" | "won" | "archived";
+  aiScore: number | null;
+  aiTemperature: "hot" | "warm" | "cold" | null;
+};
+
+type Props = {
+  leads: Lead[];
+  children: (leads: Lead[]) => React.ReactNode;
+};
+
+export function LeadFilters({
+  leads,
+  children,
+}: Props) {
+  const [search, setSearch] = useState("");
+  const [temperature, setTemperature] =
+    useState<"all" | "hot" | "warm" | "cold">("all");
+  const [status, setStatus] =
+    useState<
+      "all" | "new" | "in_progress" | "won" | "archived"
+    >("all");
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return leads.filter((lead) => {
+      const matchesSearch =
+        !query ||
+        lead.name.toLowerCase().includes(query) ||
+        (lead.company ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        lead.contact.toLowerCase().includes(query) ||
+        (lead.niche ?? "")
+          .toLowerCase()
+          .includes(query);
+
+      const matchesTemperature =
+        temperature === "all" ||
+        lead.aiTemperature === temperature;
+
+      const matchesStatus =
+        status === "all" ||
+        lead.status === status;
+
+      return (
+        matchesSearch &&
+        matchesTemperature &&
+        matchesStatus
+      );
+    });
+  }, [leads, search, temperature, status]);
+
+  return (
+    <>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "minmax(220px, 1fr) 180px 180px auto",
+          gap: 10,
+          marginBottom: 20,
+          padding: 14,
+          borderRadius: 14,
+          background: "#ffffff",
+          border: "1px solid #dbe2ea",
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,.06)",
+        }}
+      >
+        <input
+          value={search}
+          onChange={(event) =>
+            setSearch(event.target.value)
+          }
+          placeholder="РџРѕРёСЃРє РєР»РёРµРЅС‚Р°, РєРѕРјРїР°РЅРёРё, РєРѕРЅС‚Р°РєС‚Р°..."
+          style={{
+            width: "100%",
+            minWidth: 0,
+            padding: "12px 14px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            outline: "none",
+          }}
+        />
+
+        <select
+          value={temperature}
+          onChange={(event) =>
+            setTemperature(
+              event.target.value as
+                | "all"
+                | "hot"
+                | "warm"
+                | "cold"
+            )
+          }
+          style={{
+            padding: "12px 14px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            cursor: "pointer",
+          }}
+        >
+          <option value="all">
+            Р’СЃРµ AI-Р»РёРґС‹
+          </option>
+          <option value="hot">
+            рџ”Ґ РўРѕР»СЊРєРѕ HOT
+          </option>
+          <option value="warm">
+            рџџЎ РўРѕР»СЊРєРѕ WARM
+          </option>
+          <option value="cold">
+            рџ”µ РўРѕР»СЊРєРѕ COLD
+          </option>
+        </select>
+
+        <select
+          value={status}
+          onChange={(event) =>
+            setStatus(
+              event.target.value as
+                | "all"
+                | "new"
+                | "in_progress"
+                | "won"
+                | "archived"
+            )
+          }
+          style={{
+            padding: "12px 14px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            cursor: "pointer",
+          }}
+        >
+          <option value="all">
+            Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹
+          </option>
+          <option value="new">
+            РќРѕРІС‹Рµ
+          </option>
+          <option value="in_progress">
+            Р’ СЂР°Р±РѕС‚Рµ
+          </option>
+          <option value="won">
+            РЈСЃРїРµС€РЅС‹Рµ
+          </option>
+          <option value="archived">
+            РђСЂС…РёРІ
+          </option>
+        </select>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSearch("");
+            setTemperature("all");
+            setStatus("all");
+          }}
+          style={{
+            padding: "12px 16px",
+            borderRadius: 9,
+            border: "1px solid #cbd5e1",
+            background: "#f8fafc",
+            color: "#334155",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Сбросить
+        </button>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          color: "#cbd5e1",
+          fontSize: 13,
+        }}
+      >
+        РќР°Р№РґРµРЅРѕ:{" "}
+        <strong style={{ color: "#ffffff" }}>
+          {filtered.length}
+        </strong>{" "}
+        РёР· {leads.length}
+      </div>
+
+      {children(filtered)}
+    </>
+  );
+}

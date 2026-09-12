@@ -1,0 +1,157 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+
+type Props = {
+  createdAt: string;
+  contactResult:
+    | "not_contacted"
+    | "contacted"
+    | "thinking"
+    | "won"
+    | "lost"
+    | null;
+};
+
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}Рґ ${hours}С‡`;
+  }
+
+  if (hours > 0) {
+    return `${hours}С‡ ${minutes}Рј`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}Рј ${seconds}СЃ`;
+  }
+
+  return `${seconds}СЃ`;
+}
+
+export function ResponseTimer({
+  createdAt,
+  contactResult,
+}: Props) {
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+    setNow(Date.now());
+
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const contacted =
+    contactResult === "contacted" ||
+    contactResult === "thinking" ||
+    contactResult === "won" ||
+    contactResult === "lost";
+
+  if (contacted) {
+    return (
+      <div
+        style={{
+          marginTop: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "6px 10px",
+          borderRadius: 8,
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          color: "#64748b",
+          fontSize: 12,
+          fontWeight: 800,
+        }}
+      >
+        РљРѕРЅС‚Р°РєС‚ СѓСЃС‚Р°РЅРѕРІР»РµРЅ
+      </div>
+    );
+  }
+
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          marginTop: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "6px 10px",
+          borderRadius: 8,
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          color: "#64748b",
+          fontSize: 12,
+          fontWeight: 800,
+        }}
+      >
+        Р‘РµР· РєРѕРЅС‚Р°РєС‚Р°
+      </div>
+    );
+  }
+
+  const elapsed =
+    now - new Date(createdAt).getTime();
+
+  const urgent =
+    elapsed >= 15 * 60 * 1000;
+
+  const warning =
+    elapsed >= 5 * 60 * 1000 &&
+    elapsed < 15 * 60 * 1000;
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "6px 10px",
+        borderRadius: 8,
+        background: urgent
+          ? "#fef2f2"
+          : warning
+            ? "#fffbeb"
+            : "#f8fafc",
+        border: `1px solid ${
+          urgent
+            ? "#fecaca"
+            : warning
+              ? "#fde68a"
+              : "#e2e8f0"
+        }`,
+        color: urgent
+          ? "#b91c1c"
+          : warning
+            ? "#92400e"
+            : "#64748b",
+        fontSize: 12,
+        fontWeight: 800,
+      }}
+    >
+      <span>Р‘РµР· РєРѕРЅС‚Р°РєС‚Р°</span>
+
+      <span>
+        {formatElapsed(elapsed)}
+      </span>
+
+      {urgent && (
+        <span>⏱ Просрочено</span>
+      )}
+    </div>
+  );
+}

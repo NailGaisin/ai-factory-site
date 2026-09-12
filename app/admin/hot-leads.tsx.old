@@ -1,0 +1,272 @@
+﻿"use client";
+
+type HotLead = {
+  id: string;
+  name: string;
+  company: string | null;
+  contact: string;
+  aiScore: number | null;
+  aiRecommendedAction: string | null;
+  aiFirstReply: string | null;
+};
+
+export function HotLeads({
+  leads,
+}: {
+  leads: HotLead[];
+}) {
+  const hotLeads = leads
+    .filter((lead) => lead.aiScore !== null && lead.aiScore >= 75)
+    .sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0))
+    .slice(0, 5);
+
+  if (hotLeads.length === 0) {
+    return null;
+  }
+
+  function getContactHref(contact: string) {
+    const value = contact.trim();
+
+    if (
+      value.startsWith("@") ||
+      value.includes("t.me/")
+    ) {
+      const username = value
+        .replace(/^@/, "")
+        .replace(/^https?:\/\/t\.me\//, "")
+        .split(/[/?#]/)[0];
+
+      return `https://t.me/${username}`;
+    }
+
+    const phone = value.replace(/[^\d+]/g, "");
+
+    return `tel:${phone}`;
+  }
+
+  return (
+    <section
+      style={{
+        marginBottom: 35,
+        padding: 20,
+        borderRadius: 18,
+        background:
+          "linear-gradient(135deg, rgba(127,29,29,.35), rgba(15,23,42,.9))",
+        border: "1px solid rgba(248,113,113,.35)",
+        boxShadow: "0 8px 30px rgba(0,0,0,.18)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 15,
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              color: "#f87171",
+              fontSize: 11,
+              fontWeight: 900,
+              letterSpacing: ".12em",
+              marginBottom: 5,
+            }}
+          >
+            AI SALES PRIORITY
+          </div>
+
+          <h2
+            style={{
+              margin: 0,
+              color: "#ffffff",
+              fontSize: 24,
+            }}
+          >
+            рџ”Ґ РћР±СЂР°Р±РѕС‚Р°С‚СЊ СЃРµР№С‡Р°СЃ
+          </h2>
+
+          <div
+            style={{
+              marginTop: 5,
+              color: "#cbd5e1",
+              fontSize: 13,
+            }}
+          >
+            Наши горячие заявки по оценке AI
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: "#fee2e2",
+            color: "#991b1b",
+            fontSize: 12,
+            fontWeight: 900,
+          }}
+        >
+          {hotLeads.length} HOT
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        {hotLeads.map((lead, index) => (
+          <div
+            key={lead.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "42px minmax(180px, 1fr) minmax(160px, 1fr) auto",
+              alignItems: "center",
+              gap: 14,
+              padding: 14,
+              borderRadius: 13,
+              background: "#ffffff",
+              border: "1px solid #fecaca",
+            }}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#fee2e2",
+                color: "#991b1b",
+                fontWeight: 900,
+              }}
+            >
+              {index + 1}
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  color: "#111827",
+                  fontWeight: 900,
+                  fontSize: 14,
+                }}
+              >
+                {lead.name}
+              </div>
+
+              {lead.company && (
+                <div
+                  style={{
+                    color: "#64748b",
+                    fontSize: 12,
+                    marginTop: 3,
+                  }}
+                >
+                  {lead.company}
+                </div>
+              )}
+
+              <div
+                style={{
+                  color: "#475569",
+                  fontSize: 12,
+                  marginTop: 5,
+                }}
+              >
+                {lead.contact}
+              </div>
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  color: "#dc2626",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  marginBottom: 5,
+                }}
+              >
+                AI SCORE: {lead.aiScore}/100
+              </div>
+
+              <div
+                style={{
+                  color: "#334155",
+                  fontSize: 12,
+                  lineHeight: 1.4,
+                }}
+              >
+                {lead.aiRecommendedAction ||
+                  "!2O70BLAO A :;85=B>< :0: <>6=> A:>@55."}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+              }}
+            >
+              <a
+                href={getContactHref(lead.contact)}
+                target={
+                  lead.contact.includes("t.me/") ||
+                  lead.contact.trim().startsWith("@")
+                    ? "_blank"
+                    : undefined
+                }
+                rel="noreferrer"
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: 9,
+                  background: "#0f172a",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                !2O70BLAO
+              </a>
+
+              {lead.aiFirstReply && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(lead.aiFirstReply ?? "")
+                      .catch(() => {});
+                  }}
+                  style={{
+                    padding: "9px 12px",
+                    borderRadius: 9,
+                    border: "1px solid #cbd5e1",
+                    background: "#f8fafc",
+                    color: "#334155",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Запросить ответ
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

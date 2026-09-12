@@ -1,0 +1,40 @@
+"use client";
+
+import { useState } from "react";
+import type { LeadStatus } from "@/lib/leads";
+
+const labels: Record<LeadStatus, string> = {
+  new: "Новая",
+  in_progress: "В работе",
+  won: "Успешно",
+  archived: "Архив"
+};
+
+export function StatusSelect({ id, initialStatus }: { id: string; initialStatus: LeadStatus }) {
+  const [status, setStatus] = useState(initialStatus);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function updateStatus(nextStatus: LeadStatus) {
+    setSaving(true);
+    setError("");
+    const response = await fetch(`/api/admin/leads/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: nextStatus })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) setStatus(nextStatus);
+    else setError(result.error ?? "!B0BCA =5 A>E@0=8;AO.");
+    setSaving(false);
+  }
+
+  return <div className="status-control">
+    <label>!B0BCA
+      <select value={status} disabled={saving} onChange={(event) => updateStatus(event.target.value as LeadStatus)}>
+        {Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+    </label>
+    {error && <span className="error">{error}</span>}
+  </div>;
+}

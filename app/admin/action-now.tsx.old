@@ -1,0 +1,159 @@
+﻿"use client";
+
+type Lead = {
+  id: string;
+  name: string;
+  company: string | null;
+  contact: string;
+  aiScore: number | null;
+  aiTemperature: "hot" | "warm" | "cold" | null;
+  contactResult:
+    | "not_contacted"
+    | "contacted"
+    | "thinking"
+    | "won"
+    | "lost"
+    | null;
+  aiRecommendedAction: string | null;
+};
+
+export function ActionNow({ leads }: { leads: Lead[] }) {
+  const priorityLeads = leads
+    .filter(
+      (lead) =>
+        lead.aiTemperature === "hot" &&
+        (lead.contactResult === null ||
+          lead.contactResult === "not_contacted")
+    )
+    .sort(
+      (a, b) =>
+        (b.aiScore ?? -1) - (a.aiScore ?? -1)
+    )
+    .slice(0, 5);
+
+  return (
+    <section
+      style={{
+        marginBottom: 28,
+        padding: 20,
+        borderRadius: 16,
+        background: "#ffffff",
+        border: "1px solid #dbe2ea",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 800,
+          color: "#111827",
+          marginBottom: 6,
+        }}
+      >
+        Р§С‚Рѕ РґРµР»Р°С‚СЊ СЃРµР№С‡Р°СЃ
+      </div>
+
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: 13,
+          marginBottom: 16,
+        }}
+      >
+        HOT-Р·Р°СЏРІРєРё Р±РµР· РєРѕРЅС‚Р°РєС‚Р°
+      </div>
+
+      {priorityLeads.length === 0 ? (
+        <div style={{ color: "#64748b", fontSize: 14 }}>
+          Новая заявка требует обработки.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {priorityLeads.map((lead, index) => (
+            <div
+              key={lead.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "34px minmax(180px,1fr) minmax(180px,1fr) auto",
+                gap: 14,
+                alignItems: "center",
+                padding: 14,
+                borderRadius: 12,
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <strong style={{ color: "#64748b" }}>
+                #{index + 1}
+              </strong>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 800,
+                    color: "#111827",
+                  }}
+                >
+                  {lead.name}
+                </div>
+
+                {lead.company && (
+                  <div
+                    style={{
+                      marginTop: 3,
+                      fontSize: 12,
+                      color: "#64748b",
+                    }}
+                  >
+                    {lead.company}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 800,
+                    color: "#111827",
+                  }}
+                >
+                  AI {lead.aiScore ?? "вЂ”"}/100
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 3,
+                    fontSize: 12,
+                    color: "#64748b",
+                  }}
+                >
+                  {lead.aiRecommendedAction ||
+                    "!2O70BLAO A :;85=B><"}
+                </div>
+              </div>
+
+              <a
+                href={`tel:${encodeURIComponent(
+                  lead.contact
+                )}`}
+                style={{
+                  padding: "9px 13px",
+                  borderRadius: 9,
+                  background: "#0f172a",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  fontSize: 12,
+                  fontWeight: 800,
+                }}
+              >
+                !2O70BLAO
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+

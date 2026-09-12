@@ -1,0 +1,260 @@
+type Lead = {
+  aiTemperature: "hot" | "warm" | "cold" | null;
+  status: "new" | "in_progress" | "won" | "archived";
+  contactResult:
+    | "not_contacted"
+    | "contacted"
+    | "thinking"
+    | "won"
+    | "lost"
+    | null;
+  dealAmount: number;
+};
+
+export function FinancePanel({
+  leads,
+}: {
+  leads: Lead[];
+}) {
+  const money = (value: number) =>
+    new Intl.NumberFormat("ru-RU", {
+      style: "currency",
+      currency: "RUB",
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const totalLeads = leads.length;
+
+  const pipeline = leads.reduce(
+    (sum, lead) => sum + (lead.dealAmount || 0),
+    0
+  );
+
+  const hotPipeline = leads
+    .filter((lead) => lead.aiTemperature === "hot")
+    .reduce(
+      (sum, lead) => sum + (lead.dealAmount || 0),
+      0
+    );
+
+  const warmPipeline = leads
+    .filter((lead) => lead.aiTemperature === "warm")
+    .reduce(
+      (sum, lead) => sum + (lead.dealAmount || 0),
+      0
+    );
+
+  const coldPipeline = leads
+    .filter((lead) => lead.aiTemperature === "cold")
+    .reduce(
+      (sum, lead) => sum + (lead.dealAmount || 0),
+      0
+    );
+
+  const wonLeads = leads.filter(
+    (lead) =>
+      lead.status === "won" &&
+      lead.dealAmount > 0
+  );
+
+  const wonRevenue = wonLeads.reduce(
+    (sum, lead) => sum + lead.dealAmount,
+    0
+  );
+
+  const lostRevenue = leads
+    .filter((lead) => lead.contactResult === "lost")
+    .reduce(
+      (sum, lead) => sum + (lead.dealAmount || 0),
+      0
+    );
+
+  const activeLeads = leads.filter(
+    (lead) =>
+      lead.status === "new" ||
+      lead.status === "in_progress"
+  );
+
+  const activePipeline = activeLeads.reduce(
+    (sum, lead) => sum + (lead.dealAmount || 0),
+    0
+  );
+
+  const averageDeal =
+    wonLeads.length > 0
+      ? Math.round(wonRevenue / wonLeads.length)
+      : 0;
+
+  const conversion =
+    totalLeads > 0
+      ? Math.round(
+          (wonLeads.length / totalLeads) * 100
+        )
+      : 0;
+
+  const cards = [
+    {
+      title: "Потенциал",
+      value: money(pipeline),
+      detail: `${totalLeads} заявок`,
+    },
+    {
+      title: "HOT-потенциал",
+      value: money(hotPipeline),
+      detail: "Горячие заявки",
+    },
+    {
+      title: "Закрыто",
+      value: money(wonRevenue),
+      detail: `${wonLeads.length} сделок`,
+    },
+    {
+      title: "!@54=89 G5:",
+      value: money(averageDeal),
+      detail: `${conversion}% конверсия`,
+    },
+  ];
+
+  return (
+    <section style={{ marginBottom: 28 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(4, minmax(0, 1fr))",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        {cards.map((card) => (
+          <div
+            key={card.title}
+            style={{
+              padding: 18,
+              borderRadius: 14,
+              background: "#ffffff",
+              border: "1px solid #dbe2ea",
+              boxShadow:
+                "0 3px 12px rgba(0,0,0,.08)",
+            }}
+          >
+            <div
+              style={{
+                color: "#64748b",
+                fontSize: 12,
+                fontWeight: 800,
+                marginBottom: 8,
+              }}
+            >
+              {card.title}
+            </div>
+
+            <div
+              style={{
+                color: "#111827",
+                fontSize: 24,
+                fontWeight: 900,
+              }}
+            >
+              {card.value}
+            </div>
+
+            <div
+              style={{
+                marginTop: 5,
+                color: "#64748b",
+                fontSize: 12,
+              }}
+            >
+              {card.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(4, minmax(0, 1fr))",
+          gap: 12,
+        }}
+      >
+        <FinanceDetail
+          title="WARM-потенциал"
+          value={money(warmPipeline)}
+        />
+
+        <FinanceDetail
+          title="COLD-потенциал"
+          value={money(coldPipeline)}
+        />
+
+        <FinanceDetail
+          title="В работе"
+          value={money(activePipeline)}
+          detail={`${activeLeads.length} заявок`}
+        />
+
+        <FinanceDetail
+          title="Потеряно"
+          value={money(lostRevenue)}
+        />
+      </div>
+    </section>
+  );
+}
+
+function FinanceDetail({
+  title,
+  value,
+  detail,
+}: {
+  title: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 12,
+        background: "#f8fafc",
+        border: "1px solid #e2e8f0",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: 11,
+          fontWeight: 800,
+          marginBottom: 5,
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          color: "#111827",
+          fontSize: 18,
+          fontWeight: 900,
+        }}
+      >
+        {value}
+      </div>
+
+      {detail && (
+        <div
+          style={{
+            marginTop: 3,
+            color: "#64748b",
+            fontSize: 11,
+          }}
+        >
+          {detail}
+        </div>
+      )}
+    </div>
+  );
+}

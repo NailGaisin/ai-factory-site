@@ -1,0 +1,154 @@
+﻿"use client";
+
+import { useState } from "react";
+
+type ContactResult =
+  | "not_contacted"
+  | "contacted"
+  | "thinking"
+  | "won"
+  | "lost";
+
+const results: {
+  value: ContactResult;
+  label: string;
+}[] = [
+  { value: "not_contacted", label: "РќРµ СЃРІСЏР·С‹РІР°Р»РёСЃСЊ" },
+  { value: "contacted", label: "!2O70;8AL" },
+  { value: "thinking", label: "Р”СѓРјР°РµС‚" },
+  { value: "won", label: "!45;:0" },
+  { value: "lost", label: "РћС‚РєР°Р·" },
+];
+
+export function ContactResult({
+  id,
+  initialResult = "not_contacted",
+}: {
+  id: string;
+  initialResult?: ContactResult | null;
+}) {
+  const [result, setResult] = useState<ContactResult>(
+    initialResult ?? "not_contacted"
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function updateResult(next: ContactResult) {
+    const previous = result;
+
+    setResult(next);
+    setSaving(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/leads/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contact_result: next,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚");
+      }
+
+      if (next === "won" || next === "lost") {
+        const status =
+          next === "won" ? "won" : "archived";
+
+        const statusResponse = await fetch(
+          `/api/admin/leads/${encodeURIComponent(id)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status }),
+          }
+        );
+
+        if (!statusResponse.ok) {
+          throw new Error("РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±РЅРѕРІРёС‚СЊ СЃС‚Р°С‚СѓСЃ");
+        }
+
+        window.dispatchEvent(
+          new Event("lead-status-updated")
+        );
+
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 250);
+      }
+    } catch (error) {
+      console.error("Contact result error:", error);
+      setResult(previous);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        paddingTop: 16,
+        borderTop: "1px solid #e5e7eb",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: 12,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          marginBottom: 8,
+        }}
+      >
+         Результат контакта
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 7,
+          flexWrap: "wrap",
+        }}
+      >
+        {results.map((item) => {
+          const active = result === item.value;
+
+          return (
+            <button
+              key={item.value}
+              type="button"
+              disabled={saving}
+              onClick={() => updateResult(item.value)}
+              style={{
+                padding: "8px 11px",
+                borderRadius: 9,
+                border: active
+                  ? "1px solid #2563eb"
+                  : "1px solid #cbd5e1",
+                background: active
+                  ? "#dbeafe"
+                  : "#ffffff",
+                color: active
+                  ? "#1d4ed8"
+                  : "#475569",
+                fontSize: 12,
+                fontWeight: active ? 800 : 600,
+                cursor: saving ? "wait" : "pointer",
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

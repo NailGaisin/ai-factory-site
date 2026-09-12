@@ -1,0 +1,334 @@
+import { getAdminSupabase } from "@/lib/supabase";
+import { isLeadStatus, LeadStatus, Lead } from "@/lib/leads";
+import { StatusSelect } from "./status-select";
+import { AiAnalyzeButton } from "./ai-analyze-button";
+
+export const dynamic = "force-dynamic";
+
+async function loadLeads(): Promise<{
+  leads: Lead[];
+  error?: string;
+}> {
+  const supabase = getAdminSupabase();
+
+  if (!supabase) {
+    return {
+      leads: [],
+      error: "Supabase РЅРµ РЅР°СЃС‚СЂРѕРµРЅ",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .select(
+      "id, created_at, name, company, contact, niche, status"
+    )
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    return {
+      leads: [],
+      error: error.message,
+    };
+  }
+
+  return {
+    leads: (data ?? []).map((row) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      name: row.name,
+      company: row.company,
+      contact: row.contact,
+      niche: row.niche ?? "",
+      status: isLeadStatus(row.status)
+        ? row.status
+        : "new",
+    })),
+  };
+}
+
+const statusNames: Record<LeadStatus, string> = {
+  new: "РќРѕРІС‹Рµ",
+  in_progress: "Р’ СЂР°Р±РѕС‚Рµ",
+  won: "РЈСЃРїРµС€РЅС‹Рµ",
+  archived: "РђСЂС…РёРІ",
+};
+
+export default async function AdminPage() {
+  const { leads, error } = await loadLeads();
+
+  const counts = {
+    new: leads.filter((lead) => lead.status === "new").length,
+    in_progress: leads.filter(
+      (lead) => lead.status === "in_progress"
+    ).length,
+    won: leads.filter((lead) => lead.status === "won").length,
+    archived: leads.filter(
+      (lead) => lead.status === "archived"
+    ).length,
+  };
+
+  return (
+    <main
+      style={{
+        maxWidth: 1200,
+        margin: "0 auto",
+        padding: "40px 20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h1
+        style={{
+          marginBottom: 8,
+        }}
+      >
+        AI FACTORY вЂ” CRM
+      </h1>
+
+      <p
+        style={{
+          color: "#666",
+          marginBottom: 30,
+        }}
+      >
+        РЈРїСЂР°РІР»РµРЅРёРµ Р·Р°СЏРІРєР°РјРё Рё РІРѕСЂРѕРЅРєР° РїСЂРѕРґР°Р¶
+      </p>
+
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            marginBottom: 20,
+            border: "1px solid #f00",
+            borderRadius: 8,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(4, minmax(0, 1fr))",
+          gap: 16,
+          marginBottom: 35,
+        }}
+      >
+        {(
+          [
+            "new",
+            "in_progress",
+            "won",
+            "archived",
+          ] as LeadStatus[]
+        ).map((status) => (
+          <div
+            key={status}
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 12,
+              padding: 20,
+              background: "#fff",
+            }}
+          >
+            <div
+              style={{
+                color: "#666",
+                marginBottom: 8,
+              }}
+            >
+              {statusNames[status]}
+            </div>
+
+            <div
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+              }}
+            >
+              {counts[status]}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 15,
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+          }}
+        >
+          Р—Р°СЏРІРєРё
+        </h2>
+
+        <div
+          style={{
+            color: "#666",
+          }}
+        >
+          Р’СЃРµРіРѕ: <strong>{leads.length}</strong>
+        </div>
+      </div>
+
+      {leads.length === 0 ? (
+        <div
+          style={{
+            padding: 30,
+            border: "1px solid #ddd",
+            borderRadius: 12,
+            textAlign: "center",
+          }}
+        >
+          Р—Р°СЏРІРѕРє РїРѕРєР° РЅРµС‚.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          {leads.map((lead) => (
+            <div
+              key={lead.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 12,
+                padding: 20,
+                background: "#fff",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "2fr 1fr 1fr 1fr",
+                  gap: 20,
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {lead.name}
+                  </div>
+
+                  {lead.company && (
+                    <div
+                      style={{
+                        color: "#555",
+                        marginTop: 4,
+                      }}
+                    >
+                      {lead.company}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      marginTop: 8,
+                    }}
+                  >
+                    <strong>РљРѕРЅС‚Р°РєС‚:</strong>{" "}
+                    {lead.contact}
+                  </div>
+
+                  {lead.niche && (
+                    <div
+                      style={{
+                        color: "#666",
+                        marginTop: 4,
+                      }}
+                    >
+                      РќРёС€Р°: {lead.niche}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      color: "#777",
+                      fontSize: 13,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Р”Р°С‚Р°
+                  </div>
+
+                  <div>
+                    {new Intl.DateTimeFormat(
+                      "ru-RU",
+                      {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }
+                    ).format(
+                      new Date(lead.createdAt)
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      color: "#777",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    РЎС‚Р°С‚СѓСЃ
+                  </div>
+
+                  <StatusSelect
+                    id={lead.id}
+                    initialStatus={lead.status}
+                  />
+              <AiAnalyzeButton
+                lead={{
+                  name: lead.name,
+                  company: lead.company,
+                  contact: lead.contact,
+                  niche: lead.niche,
+                }}
+              />
+                </div>
+
+                <div
+                  style={{
+                    textAlign: "right",
+                    color: "#888",
+                    fontSize: 12,
+                  }}
+                >
+                  ID
+                  <br />
+                  {lead.id}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
+
+
+
+

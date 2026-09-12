@@ -1,0 +1,345 @@
+﻿import { getAdminSupabase } from "@/lib/supabase";
+import { isLeadStatus, LeadStatus, Lead } from "@/lib/leads";
+import { StatusSelect } from "./status-select";
+import { AiAnalyzeButton } from "./ai-analyze-button";
+
+export const dynamic = "force-dynamic";
+
+async function loadLeads(): Promise<{
+  leads: Lead[];
+  error?: string;
+}> {
+  const supabase = getAdminSupabase();
+
+  if (!supabase) {
+    return {
+      leads: [],
+      error: "Supabase РЅРµ РЅР°СЃС‚СЂРѕРµРЅ",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, created_at, name, company, contact, niche, status")
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    return {
+      leads: [],
+      error: error.message,
+    };
+  }
+
+  return {
+    leads: (data ?? []).map((row) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      name: row.name,
+      company: row.company,
+      contact: row.contact,
+      niche: row.niche ?? "",
+      status: isLeadStatus(row.status) ? row.status : "new",
+    })),
+  };
+}
+
+const statusNames: Record<LeadStatus, string> = {
+  new: "РќРѕРІС‹Рµ",
+  in_progress: "Р’ СЂР°Р±РѕС‚Рµ",
+  won: "РЈСЃРїРµС€РЅС‹Рµ",
+  archived: "РђСЂС…РёРІ",
+};
+
+export default async function AdminPage() {
+  const { leads, error } = await loadLeads();
+
+  const counts = {
+    new: leads.filter((lead) => lead.status === "new").length,
+    in_progress: leads.filter((lead) => lead.status === "in_progress").length,
+    won: leads.filter((lead) => lead.status === "won").length,
+    archived: leads.filter((lead) => lead.status === "archived").length,
+  };
+
+  return (
+    <main
+      style={{
+        maxWidth: 1400,
+        margin: "0 auto",
+        padding: "40px 24px 80px",
+        fontFamily: "Arial, sans-serif",
+        color: "#111",
+      }}
+    ><style>{`main h1, main h2 { color: #ffffff !important; } main h3, main p, main div, main span, main strong, main label { color: #111827 !important; } main button { color: #ffffff !important; } main select { color: #ffffff !important; background: #0f172a !important; } main option { color: #111827 !important; background: #ffffff !important; }`}</style>
+      <h1
+        style={{
+          margin: 0,
+          marginBottom: 8,
+          fontSize: 32,
+          color: "#111",
+        }}
+      >
+        AI FACTORY вЂ” CRM
+      </h1>
+
+      <p
+        style={{
+          color: "#ffffff", marginTop: 0, marginBottom: 30, fontSize: 16,
+        }}
+      >
+        РЈРїСЂР°РІР»РµРЅРёРµ Р·Р°СЏРІРєР°РјРё Рё РІРѕСЂРѕРЅРєРѕР№ РїСЂРѕРґР°Р¶
+      </p>
+
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            marginBottom: 20,
+            border: "1px solid #e00",
+            borderRadius: 10,
+            background: "#fff5f5",
+            color: "#b00000",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 16,
+          marginBottom: 35,
+        }}
+      >
+        {(["new", "in_progress", "won", "archived"] as LeadStatus[]).map(
+          (status) => (
+            <div
+              key={status}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 14,
+                padding: 20,
+                background: "#fff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              }}
+            >
+              <div
+                style={{
+                  color: "#222",
+                  marginBottom: 8,
+                  fontSize: 14,
+                }}
+              >
+                {statusNames[status]}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: "#111",
+                }}
+              >
+                {counts[status]}
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 15,
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 24,
+            color: "#111",
+          }}
+        >
+          Р—Р°СЏРІРєРё
+        </h2>
+
+        <div
+          style={{
+            color: "#222",
+          }}
+        >
+          Р’СЃРµРіРѕ: <strong>{leads.length}</strong>
+        </div>
+      </div>
+
+      {leads.length === 0 ? (
+        <div
+          style={{
+            padding: 40,
+            border: "1px solid #ddd",
+            borderRadius: 14,
+            textAlign: "center",
+            background: "#fff",
+            color: "#222",
+          }}
+        >
+          Р—Р°СЏРІРѕРє РїРѕРєР° РЅРµС‚.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gap: 18,
+          }}
+        >
+          {leads.map((lead) => (
+            <div
+              key={lead.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 14,
+                padding: 24,
+                background: "#fff",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 2fr) minmax(180px, 1fr) minmax(180px, 1fr)",
+                  gap: 24,
+                  alignItems: "start",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: "#111",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {lead.name}
+                  </div>
+
+                  {lead.company && (
+                    <div
+                      style={{
+                        color: "#444",
+                        fontSize: 15,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {lead.company}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      fontSize: 15,
+                      color: "#222",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <strong>РљРѕРЅС‚Р°РєС‚:</strong> {lead.contact}
+                  </div>
+
+                  {lead.niche && (
+                    <div
+                      style={{
+                        color: "#222",
+                        fontSize: 14,
+                      }}
+                    >
+                      <strong>РќРёС€Р°:</strong> {lead.niche}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      color: "#222",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Р”Р°С‚Р°
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#222",
+                      fontSize: 15,
+                    }}
+                  >
+                    {new Intl.DateTimeFormat("ru-RU", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(new Date(lead.createdAt))}
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      color: "#222",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    РЎС‚Р°С‚СѓСЃ
+                  </div>
+
+                  <StatusSelect
+                    id={lead.id}
+                    initialStatus={lead.status}
+                  />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 24,
+                  paddingTop: 20,
+                  borderTop: "1px solid #eee",
+                }}
+              >
+                <AiAnalyzeButton
+                  lead={{
+                    name: lead.name,
+                    company: lead.company,
+                    contact: lead.contact,
+                    niche: lead.niche,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  marginTop: 18,
+                  paddingTop: 12,
+                  borderTop: "1px solid #f0f0f0",
+                  textAlign: "right",
+                  color: "#374151",
+                  fontSize: 11,
+                  wordBreak: "break-all",
+                }}
+              >
+                ID: {lead.id}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
+

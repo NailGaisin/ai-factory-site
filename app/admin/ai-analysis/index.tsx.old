@@ -1,0 +1,128 @@
+﻿"use client";
+
+import { useState } from "react";
+
+type Analysis = {
+  score: number;
+  temperature: "hot" | "warm" | "cold";
+  summary: string;
+  needs: string;
+  recommendedAction: string;
+  firstReply: string;
+};
+
+type Props = {
+  lead: {
+    name: string;
+    company: string;
+    contact: string;
+    niche: string;
+  };
+};
+
+const labels = {
+  hot: "рџ”Ґ HOT",
+  warm: "рџџЎ WARM",
+  cold: "рџ”µ COLD",
+};
+
+export function AiAnalysis({ lead }: Props) {
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function analyze() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/ai/analyze-lead", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(lead),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.analysis) {
+        throw new Error(data.error || "РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РїРѕР»РЅРёС‚СЊ Р°РЅР°Р»РёР·");
+      }
+
+      setAnalysis(data.analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "РћС€РёР±РєР° AI");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        type="button"
+        onClick={analyze}
+        disabled={loading}
+        style={{
+          padding: "8px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          background: loading ? "#eee" : "#111",
+          color: loading ? "#666" : "#fff",
+          cursor: loading ? "wait" : "pointer",
+        }}
+      >
+        {loading ? "рџ¤– РђРЅР°Р»РёР·РёСЂСѓСЋ..." : "рџ¤– AI-Р°РЅР°Р»РёР·"}
+      </button>
+
+      {error && (
+        <div style={{ marginTop: 8, color: "#b00020" }}>
+          {error}
+        </div>
+      )}
+
+      {analysis && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: 14,
+            border: "1px solid #ddd",
+            borderRadius: 10,
+            background: "#fafafa",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 700 }}>
+            {labels[analysis.temperature]} вЂ” {analysis.score}/100
+          </div>
+
+          <p>
+            <strong> Резюме</strong> {analysis.summary}
+          </p>
+
+          <p>
+            <strong>РџРѕС‚СЂРµР±РЅРѕСЃС‚Рё:</strong> {analysis.needs}
+          </p>
+
+          <p>
+            <strong>Р”РµР№СЃС‚РІРёРµ:</strong> {analysis.recommendedAction}
+          </p>
+
+          <div
+            style={{
+              marginTop: 10,
+              padding: 10,
+              borderRadius: 8,
+              background: "#fff",
+              border: "1px solid #ddd",
+            }}
+          >
+            <strong>РџРµСЂРІС‹Р№ РѕС‚РІРµС‚ РєР»РёРµРЅС‚Сѓ:</strong>
+            <div style={{ marginTop: 6 }}>{analysis.firstReply}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

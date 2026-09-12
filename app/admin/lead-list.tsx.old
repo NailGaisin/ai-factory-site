@@ -1,0 +1,598 @@
+﻿"use client";
+
+import { useMemo, useState } from "react";
+import { StatusSelect } from "./status-select";
+import { AiAnalyzeButton } from "./ai-analyze-button";
+import { ContactResult } from "./contact-result";
+import { DealAmount } from "./deal-amount";
+import { LeadHistory } from "./lead-history";
+import { ResponseTimer } from "./response-timer";
+import { AiFirstReply } from "./ai-first-reply";
+
+type Lead = {
+  id: string;
+  createdAt: string;
+  name: string;
+  company: string | null;
+  contact: string;
+  niche: string;
+  status:
+    | "new"
+    | "in_progress"
+    | "won"
+    | "archived";
+  aiScore: number | null;
+  aiTemperature:
+    | "hot"
+    | "warm"
+    | "cold"
+    | null;
+  aiSummary: string | null;
+  aiNeeds: string | null;
+  aiRecommendedAction: string | null;
+  aiFirstReply: string | null;
+  contactResult:
+    | "not_contacted"
+    | "contacted"
+    | "thinking"
+    | "won"
+    | "lost"
+    | null;
+  dealAmount: number;
+  history: {
+    id: number;
+    action: string;
+    oldValue: string | null;
+    newValue: string | null;
+    createdAt: string;
+  }[];
+};
+
+export function LeadList({
+  leads,
+}: {
+  leads: Lead[];
+}) {
+  const [search, setSearch] = useState("");
+  const [temperature, setTemperature] =
+    useState("all");
+  const [status, setStatus] =
+    useState("all");
+
+  const filteredLeads = useMemo(() => {
+    const query = search
+      .trim()
+      .toLowerCase();
+
+    return leads.filter((lead) => {
+      const matchesSearch =
+        !query ||
+        lead.name
+          .toLowerCase()
+          .includes(query) ||
+        (lead.company ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        lead.contact
+          .toLowerCase()
+          .includes(query) ||
+        lead.niche
+          .toLowerCase()
+          .includes(query);
+
+      const matchesTemperature =
+        temperature === "all" ||
+        lead.aiTemperature === temperature;
+
+      const matchesStatus =
+        status === "all" ||
+        lead.status === status;
+
+      return (
+        matchesSearch &&
+        matchesTemperature &&
+        matchesStatus
+      );
+    });
+  }, [
+    leads,
+    search,
+    temperature,
+    status,
+  ]);
+
+  function resetFilters() {
+    setSearch("");
+    setTemperature("all");
+    setStatus("all");
+  }
+
+  return (
+    <section>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "minmax(240px, 1fr) 170px 170px auto",
+          gap: 10,
+          marginBottom: 16,
+          padding: 14,
+          borderRadius: 14,
+          background: "#ffffff",
+          border: "1px solid #dbe2ea",
+        }}
+      >
+        <input
+          value={search}
+          onChange={(event) =>
+            setSearch(event.target.value)
+          }
+          placeholder="РџРѕРёСЃРє РєР»РёРµРЅС‚Р°, РєРѕРјРїР°РЅРёРё, РєРѕРЅС‚Р°РєС‚Р°..."
+          style={{
+            width: "100%",
+            padding:
+              "12px 14px",
+            borderRadius: 9,
+            border:
+              "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            outline: "none",
+          }}
+        />
+
+        <select
+          value={temperature}
+          onChange={(event) =>
+            setTemperature(
+              event.target.value
+            )
+          }
+          style={{
+            padding:
+              "12px 14px",
+            borderRadius: 9,
+            border:
+              "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            cursor: "pointer",
+          }}
+        >
+          <option value="all">
+            Р’СЃРµ AI-Р»РёРґС‹
+          </option>
+          <option value="hot">
+            рџ”Ґ HOT
+          </option>
+          <option value="warm">
+            рџџЎ WARM
+          </option>
+          <option value="cold">
+            рџ”µ COLD
+          </option>
+        </select>
+
+        <select
+          value={status}
+          onChange={(event) =>
+            setStatus(
+              event.target.value
+            )
+          }
+          style={{
+            padding:
+              "12px 14px",
+            borderRadius: 9,
+            border:
+              "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#0f172a",
+            cursor: "pointer",
+          }}
+        >
+          <option value="all">
+            Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹
+          </option>
+          <option value="new">
+            РќРѕРІС‹Рµ
+          </option>
+          <option value="in_progress">
+            Р’ СЂР°Р±РѕС‚Рµ
+          </option>
+          <option value="won">
+            РЈСЃРїРµС€РЅС‹Рµ
+          </option>
+          <option value="archived">
+            РђСЂС…РёРІ
+          </option>
+        </select>
+
+        <button
+          type="button"
+          onClick={resetFilters}
+          style={{
+            padding:
+              "12px 16px",
+            borderRadius: 9,
+            border:
+              "1px solid #cbd5e1",
+            background: "#f8fafc",
+            color: "#334155",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Сбросить
+        </button>
+      </div>
+
+      <div
+        style={{
+          color: "#cbd5e1",
+          fontSize: 13,
+          marginBottom: 16,
+        }}
+      >
+        РќР°Р№РґРµРЅРѕ:{" "}
+        <strong
+          style={{
+            color: "#ffffff",
+          }}
+        >
+          {filteredLeads.length}
+        </strong>{" "}
+        РёР· {leads.length}
+      </div>
+
+      {filteredLeads.length === 0 ? (
+        <div
+          style={{
+            padding: 40,
+            border:
+              "1px solid #dbe2ea",
+            borderRadius: 14,
+            textAlign: "center",
+            background: "#ffffff",
+            color: "#475569",
+          }}
+        >
+          РџРѕ Р·Р°РґР°РЅРЅС‹Рј С„РёР»СЊС‚СЂР°Рј Р·Р°СЏРІРѕРє РЅРµС‚.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gap: 18,
+          }}
+        >
+          {filteredLeads.map((lead) => {
+            const temperature =
+              lead.aiTemperature;
+
+            const badgeStyle =
+              temperature === "hot"
+                ? {
+                    background:
+                      "#fee2e2",
+                    color:
+                      "#991b1b",
+                  }
+                : temperature ===
+                    "warm"
+                  ? {
+                      background:
+                        "#fef3c7",
+                      color:
+                        "#92400e",
+                    }
+                  : temperature ===
+                      "cold"
+                    ? {
+                        background:
+                          "#dbeafe",
+                        color:
+                          "#1e40af",
+                      }
+                    : {
+                        background:
+                          "#f1f5f9",
+                        color:
+                          "#475569",
+                      };
+
+            return (
+              <div
+                key={lead.id}
+                style={{
+                  border:
+                    "1px solid #dbe2ea",
+                  borderRadius: 16,
+                  padding: 24,
+                  background:
+                    "#ffffff",
+                  boxShadow:
+                    "0 3px 12px rgba(0,0,0,0.08)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent:
+                      "space-between",
+                    alignItems:
+                      "flex-start",
+                    gap: 16,
+                    marginBottom: 20,
+                    flexWrap:
+                      "wrap",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 700,
+                        color:
+                          "#111827",
+                        marginBottom: 6,
+                      }}
+                    >
+                      {lead.name}
+                    </div>
+
+                    {lead.company && (
+                      <div
+                        style={{
+                          color:
+                            "#475569",
+                          fontSize: 15,
+                        }}
+                      >
+                        {lead.company}
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems:
+                        "center",
+                    }}
+                  >
+                    <span
+                      style={{
+                        ...badgeStyle,
+                        borderRadius:
+                          999,
+                        padding:
+                          "7px 12px",
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {temperature
+                        ? temperature.toUpperCase()
+                        : "РќР• РћР¦Р•РќР•РќРћ"}
+                    </span>
+
+                    {lead.aiScore !==
+                      null && (
+                      <span
+                        style={{
+                          background:
+                            "#0f172a",
+                          color:
+                            "#ffffff",
+                          borderRadius:
+                            999,
+                          padding:
+                            "7px 12px",
+                          fontSize: 12,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {lead.aiScore}/100
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "minmax(0, 2fr) minmax(180px, 1fr) minmax(180px, 1fr)",
+                    gap: 24,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        color:
+                          "#1f2937",
+                        fontSize: 15,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <strong>
+                        РљРѕРЅС‚Р°РєС‚:
+                      </strong>{" "}
+                      {lead.contact}
+                    </div>
+
+                    {lead.niche && (
+                      <div
+                        style={{
+                          color:
+                            "#1f2937",
+                          fontSize: 14,
+                        }}
+                      >
+                        <strong>
+                          РќРёС€Р°:
+                        </strong>{" "}
+                        {lead.niche}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        color:
+                          "#64748b",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Р”Р°С‚Р°
+                    </div>
+
+                    <div
+                      style={{
+                        color:
+                          "#111827",
+                        fontSize: 14,
+                      }}
+                    >
+                      {new Intl.DateTimeFormat(
+                        "ru-RU",
+                        {
+                          dateStyle:
+                            "medium",
+                          timeStyle:
+                            "short",
+                        }
+                      ).format(
+                        new Date(
+                          lead.createdAt
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        color:
+                          "#64748b",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      !B0BCA
+                    </div>
+
+                    <StatusSelect
+                      id={lead.id}
+                      initialStatus={
+                        lead.status
+                      }
+                    />
+                  </div>
+                </div>
+
+                <ContactResult
+                  id={lead.id}
+                  initialResult={lead.contactResult}
+                />
+
+                <DealAmount
+                  id={lead.id}
+                  initialAmount={lead.dealAmount}
+                />
+
+                <AiFirstReply
+                  leadId={lead.id}
+                  firstReply={lead.aiFirstReply}
+                />
+                {lead.aiRecommendedAction && (
+                  <div
+                    style={{
+                      marginTop: 16,
+                      padding: 14,
+                      borderRadius: 10,
+                      border: "1px solid #bfdbfe",
+                      background: "#eff6ff",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: "#1d4ed8",
+                        textTransform: "uppercase",
+                        marginBottom: 6,
+                      }}
+                    >
+                      !59G0A A45;0BL
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                        fontWeight: 700,
+                        color: "#1e3a8a",
+                      }}
+                    >
+                      {lead.aiRecommendedAction}
+                    </div>
+                  </div>
+                )}
+                <ResponseTimer
+                  createdAt={lead.createdAt}
+                  contactResult={lead.contactResult}
+                />
+                <LeadHistory
+                  items={lead.history}
+                />
+
+                <div
+                  style={{
+                    marginTop: 24,
+                    paddingTop: 20,
+                    borderTop:
+                      "1px solid #e5e7eb",
+                  }}
+                >
+                  <AiAnalyzeButton
+                    lead={{
+                      id: lead.id,
+                      name:
+                        lead.name,
+                      company:
+                        lead.company,
+                      contact:
+                        lead.contact,
+                      niche:
+                        lead.niche,
+                    }}                  initialAnalysis={
+                    lead.aiScore !== null && lead.aiTemperature
+                      ? {
+                          score: lead.aiScore,
+                          temperature: lead.aiTemperature,
+                          summary: lead.aiSummary ?? "",
+                          needs: lead.aiNeeds ?? "",
+                          recommendedAction: lead.aiRecommendedAction ?? "",
+                          firstReply: lead.aiFirstReply ?? "",
+                        }
+                      : null
+                  }
+/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+
+

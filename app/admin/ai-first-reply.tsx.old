@@ -1,0 +1,127 @@
+﻿"use client";
+
+import { useState } from "react";
+
+type Props = {
+  leadId: string;
+  firstReply: string | null;
+};
+
+export function AiFirstReply({ leadId, firstReply }: Props) {
+  const [reply, setReply] = useState(firstReply ?? "");
+  const [loading, setLoading] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/ai/analyze-lead?id=${encodeURIComponent(leadId)}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? "РћС€РёР±РєР° AI");
+      }
+
+      setReply(data.firstReply ?? "");
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "РћС€РёР±РєР° РіРµРЅРµСЂР°С†РёРё РѕС‚РІРµС‚Р°"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        padding: 14,
+        borderRadius: 10,
+        border: "1px solid #e2e8f0",
+        background: "#f8fafc",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: "#475569",
+          textTransform: "uppercase",
+          marginBottom: 8,
+        }}
+      >
+        AI вЂ” РїРµСЂРІС‹Р№ РѕС‚РІРµС‚ РєР»РёРµРЅС‚Сѓ
+      </div>
+
+      {reply ? (
+        <div
+          style={{
+            fontSize: 14,
+            lineHeight: 1.55,
+            color: "#1e293b",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {reply}
+        </div>
+      ) : (
+        <div
+          style={{
+            fontSize: 13,
+            color: "#94a3b8",
+          }}
+        >
+          РћС‚РІРµС‚ РµС‰С‘ РЅРµ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅ.
+        </div>
+      )}
+
+      {reply && (
+        <button
+          type="button"
+          onClick={async () => {
+            await navigator.clipboard.writeText(reply);
+          }}
+          style={{
+            marginTop: 10,
+            marginRight: 8,
+            padding: "8px 12px",
+            borderRadius: 8,
+            border: "1px solid #cbd5e1",
+            background: "#fff",
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Запросить ответ
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={generate}
+        disabled={loading}
+        style={{
+          marginTop: 10,
+          padding: "8px 12px",
+          borderRadius: 8,
+          border: "1px solid #cbd5e1",
+          background: "#fff",
+          cursor: loading ? "wait" : "pointer",
+          fontWeight: 700,
+        }}
+      >
+        {loading ? "5=5@8@CN..." : "!35=5@8@>20BL >B25B"}
+      </button>
+    </div>
+  );
+}

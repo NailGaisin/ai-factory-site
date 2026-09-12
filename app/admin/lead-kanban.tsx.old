@@ -1,0 +1,312 @@
+"use client";
+
+import { useState } from "react";
+
+type Lead = {
+  id: string;
+  name: string;
+  company: string | null;
+  contact: string;
+  status: "new" | "in_progress" | "won" | "archived";
+  aiScore: number | null;
+  aiTemperature: "hot" | "warm" | "cold" | null;
+};
+
+const columns = [
+  { status: "new" as const, title: "Новые", description: "Новые заявки" },
+  { status: "in_progress" as const, title: "В работе", description: "Менеджер работает" },
+  { status: "won" as const, title: "#A?5H=K5", description: "!45;:0 A>AB>O;0AL" },
+  { status: "archived" as const, title: "Архив", description: "Закрытые заявки" },
+];
+
+export function LeadKanban({ leads }: { leads: Lead[] }) {
+  const [items, setItems] = useState(leads);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function changeStatus(id: string, status: Lead["status"]) {
+    const previous = items;
+
+    setItems((current) =>
+      current.map((lead) =>
+        lead.id === id ? { ...lead, status } : lead
+      )
+    );
+
+    setSavingId(id);
+
+    try {
+      const response = await fetch(`/api/admin/leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Не удалось сохранить статус");
+      }
+    } catch (error) {
+      console.error("Kanban status error:", error);
+      setItems(previous);
+    } finally {
+      setSavingId(null);
+      window.dispatchEvent(new Event("ai-kanban-updated"));
+    }
+  }
+
+  return (
+    <section style={{ marginBottom: 35 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          gap: 16,
+          marginBottom: 14,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h2 style={{ margin: 0, color: "#ffffff", fontSize: 24 }}>
+            Воронка продаж
+          </h2>
+          <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: 13 }}>
+            Перетаскивайте заявки между этапами
+          </p>
+        </div>
+
+        <div style={{ color: "#94a3b8", fontSize: 13 }}>
+          Всего:{" "}
+          <strong style={{ color: "#ffffff" }}>
+            {items.length}
+          </strong>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(220px, 1fr))",
+          gap: 14,
+          overflowX: "auto",
+          paddingBottom: 6,
+        }}
+      >
+        {columns.map((column) => {
+          const columnLeads = items.filter(
+            (lead) => lead.status === column.status
+          );
+
+          return (
+            <div
+              key={column.status}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+
+                if (draggedId) {
+                  void changeStatus(draggedId, column.status);
+                }
+
+                setDraggedId(null);
+              }}
+              style={{
+                minHeight: 250,
+                padding: 12,
+                borderRadius: 16,
+                background: "rgba(15,23,42,.72)",
+                border: "1px solid rgba(148,163,184,.2)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                  padding: "4px 3px",
+                }}
+              >
+                <div>
+                  <div style={{ color: "#ffffff", fontSize: 14, fontWeight: 800 }}>
+                    {column.title}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                    {column.description}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    minWidth: 28,
+                    height: 28,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.08)",
+                    color: "#ffffff",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  {columnLeads.length}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 9 }}>
+                {columnLeads.map((lead) => {
+                  const badge =
+                    lead.aiTemperature === "hot"
+                      ? "HOT"
+                      : lead.aiTemperature === "warm"
+                        ? "WARM"
+                        : lead.aiTemperature === "cold"
+                          ? "COLD"
+                          : null;
+
+                  return (
+                    <div
+                      key={lead.id}
+                      draggable
+                      onDragStart={() => setDraggedId(lead.id)}
+                      onDragEnd={() => setDraggedId(null)}
+                      style={{
+                        padding: 14,
+                        borderRadius: 12,
+                        background: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        cursor: savingId === lead.id ? "wait" : "grab",
+                        opacity: savingId === lead.id ? 0.55 : 1,
+                        boxShadow: "0 3px 10px rgba(0,0,0,.12)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              color: "#111827",
+                              fontWeight: 800,
+                              fontSize: 14,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {lead.name}
+                          </div>
+
+                          {lead.company && (
+                            <div
+                              style={{
+                                color: "#64748b",
+                                fontSize: 12,
+                                marginTop: 3,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {lead.company}
+                            </div>
+                          )}
+                        </div>
+
+                        {badge && (
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              padding: "4px 7px",
+                              borderRadius: 999,
+                              background:
+                                badge === "HOT"
+                                  ? "#fee2e2"
+                                  : badge === "WARM"
+                                    ? "#fef3c7"
+                                    : "#dbeafe",
+                              color:
+                                badge === "HOT"
+                                  ? "#991b1b"
+                                  : badge === "WARM"
+                                    ? "#92400e"
+                                    : "#1e40af",
+                              fontSize: 9,
+                              fontWeight: 900,
+                            }}
+                          >
+                            {badge}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: 10,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: "#475569",
+                            fontSize: 11,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {lead.contact}
+                        </div>
+
+                        {lead.aiScore !== null && (
+                          <div
+                            style={{
+                              flexShrink: 0,
+                              color: "#0f172a",
+                              fontSize: 11,
+                              fontWeight: 900,
+                            }}
+                          >
+                            {lead.aiScore}/100
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {columnLeads.length === 0 && (
+                  <div
+                    style={{
+                      minHeight: 100,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 12,
+                      border: "1px dashed rgba(148,163,184,.3)",
+                      color: "#64748b",
+                      fontSize: 12,
+                      textAlign: "center",
+                      padding: 15,
+                    }}
+                  >
+                    Перетащите заявку сюда
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

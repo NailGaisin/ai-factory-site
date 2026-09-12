@@ -1,0 +1,264 @@
+"use client";
+
+import { useState } from "react";
+
+type Analysis = {
+  score: number;
+  temperature: "hot" | "warm" | "cold";
+  summary: string;
+  needs: string;
+  recommendedAction: string;
+  firstReply: string;
+};
+
+type Props = {
+  lead: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    message?: string;
+  };
+};
+
+export function AiAnalyzeButton({ lead }: Props) {
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function analyze() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/ai/analyze-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Ошибка AI-анализа");
+      }
+
+      setAnalysis(data.analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка AI-анализа");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const temperature = analysis?.temperature;
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        marginTop: 18,
+        padding: 22,
+        borderRadius: 14,
+        background: "#f8fafc",
+        border: "1px solid #cbd5e1",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
+          marginBottom: 18,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+              color: "#111827",
+              marginBottom: 4,
+            }}
+          >
+            🤖 AI-анализ заявки
+          </div>
+
+          <div style={{ color: "#475569", fontSize: 14 }}>
+            Автоматическая оценка лида и следующего действия
+          </div>
+        </div>
+
+        <button
+          onClick={analyze}
+          disabled={loading}
+          style={{
+            border: 0,
+            borderRadius: 10,
+            padding: "11px 18px",
+            background: loading ? "#64748b" : "#2563eb",
+            color: "#ffffff",
+            fontWeight: 700,
+            cursor: loading ? "wait" : "pointer",
+          }}
+        >
+          {loading ? "⏳ Анализ..." : "🤖 Запустить AI"}
+        </button>
+      </div>
+
+      {error && (
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            background: "#fee2e2",
+            color: "#991b1b",
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {analysis && (
+        <div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 14,
+              marginBottom: 18,
+            }}
+          >
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 10,
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+                ТЕМПЕРАТУРА
+              </div>
+              <div
+                style={{
+                  marginTop: 5,
+                  fontSize: 22,
+                  fontWeight: 900,
+                  color:
+                    temperature === "hot"
+                      ? "#dc2626"
+                      : temperature === "warm"
+                        ? "#d97706"
+                        : "#2563eb",
+                }}
+              >
+                {temperature === "hot"
+                  ? "🔥 HOT"
+                  : temperature === "warm"
+                    ? "🟠 WARM"
+                    : "🔵 COLD"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 10,
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+                ОЦЕНКА ЛИДА
+              </div>
+              <div
+                style={{
+                  marginTop: 5,
+                  fontSize: 28,
+                  fontWeight: 900,
+                  color: "#111827",
+                }}
+              >
+                {analysis.score}/100
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 12 }}>
+            <Info title="Краткий вывод" text={analysis.summary} />
+            <Info title="Потребности клиента" text={analysis.needs} />
+            <Info title="Рекомендуемое действие" text={analysis.recommendedAction} />
+
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 10,
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+              }}
+            >
+              <div
+                style={{
+                  color: "#1e40af",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  marginBottom: 7,
+                }}
+              >
+                ГОТОВЫЙ ПЕРВЫЙ ОТВЕТ КЛИЕНТУ
+              </div>
+
+              <div
+                style={{
+                  color: "#1e3a8a",
+                  fontSize: 15,
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {analysis.firstReply}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Info({ title, text }: { title: string; text: string }) {
+  return (
+    <div
+      style={{
+        padding: 16,
+        borderRadius: 10,
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
+      }}
+    >
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: 12,
+          fontWeight: 800,
+          marginBottom: 7,
+        }}
+      >
+        {title.toUpperCase()}
+      </div>
+
+      <div
+        style={{
+          color: "#111827",
+          fontSize: 15,
+          lineHeight: 1.5,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}

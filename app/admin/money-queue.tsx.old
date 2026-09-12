@@ -1,0 +1,195 @@
+"use client";
+
+type Lead = {
+  id: string;
+  name: string;
+  company: string;
+  contact: string;
+  aiScore: number | null;
+  aiTemperature: "hot" | "warm" | "cold" | null;
+  dealAmount: number;
+  contactResult:
+    | "not_contacted"
+    | "contacted"
+    | "thinking"
+    | "won"
+    | "lost"
+    | null;
+};
+
+function priority(lead: Lead) {
+  let value = lead.aiScore ?? 0;
+
+  if (lead.aiTemperature === "hot") {
+    value += 30;
+  } else if (lead.aiTemperature === "warm") {
+    value += 15;
+  }
+
+  if (lead.dealAmount > 0) {
+    value += Math.min(lead.dealAmount / 10000, 30);
+  }
+
+  if (
+    lead.contactResult === "not_contacted" ||
+    lead.contactResult === null
+  ) {
+    value += 20;
+  }
+
+  if (lead.contactResult === "thinking") {
+    value += 10;
+  }
+
+  return value;
+}
+
+export function MoneyQueue({
+  leads,
+}: {
+  leads: Lead[];
+}) {
+  const queue = leads
+    .filter(
+      (lead) =>
+        lead.aiTemperature === "hot" ||
+        lead.aiTemperature === "warm"
+    )
+    .filter(
+      (lead) =>
+        lead.contactResult !== "won" &&
+        lead.contactResult !== "lost"
+    )
+    .sort((a, b) => priority(b) - priority(a))
+    .slice(0, 5);
+
+  if (queue.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      style={{
+        marginBottom: 30,
+        padding: 20,
+        borderRadius: 14,
+        background: "#ffffff",
+        border: "1px solid #dbe2ea",
+        boxShadow: "0 2px 8px rgba(0,0,0,.08)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: "#2563eb",
+          textTransform: "uppercase",
+          marginBottom: 6,
+        }}
+      >
+        Деньги сейчас
+      </div>
+
+      <h2
+        style={{
+          margin: "0 0 16px",
+          fontSize: 22,
+          color: "#111827",
+        }}
+      >
+        Очередь приоритетных заявок
+      </h2>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        {queue.map((lead, index) => (
+          <div
+            key={lead.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "40px 1fr auto",
+              alignItems: "center",
+              gap: 12,
+              padding: 12,
+              borderRadius: 10,
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 900,
+                color: "#2563eb",
+              }}
+            >
+              #{index + 1}
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontWeight: 800,
+                  color: "#111827",
+                }}
+              >
+                {lead.name}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 3,
+                  fontSize: 13,
+                  color: "#64748b",
+                }}
+              >
+                {lead.company || lead.contact}
+              </div>
+            </div>
+
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "#2563eb",
+                }}
+              >
+                {lead.aiTemperature?.toUpperCase()}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "#475569",
+                }}
+              >
+                AI {lead.aiScore ?? 0}/100
+              </div>
+
+              {lead.dealAmount > 0 && (
+                <div
+                  style={{
+                    marginTop: 3,
+                    fontWeight: 800,
+                    color: "#111827",
+                  }}
+                >
+                  {new Intl.NumberFormat("ru-RU", {
+                    style: "currency",
+                    currency: "RUB",
+                    maximumFractionDigits: 0,
+                  }).format(lead.dealAmount)}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
