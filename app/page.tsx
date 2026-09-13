@@ -43,7 +43,7 @@ export default function Home() {
 
       if (response.ok) {
         setState("success");
-        setMessage("Заявка принята. Мы свяжемся с вами в ближайшее время.");
+        setMessage("Заявка принята. Подготовим мини-разбор и отправим его на указанную почту.");
         setForm(initialForm);
       } else {
         setState("error");
@@ -515,7 +515,7 @@ export default function Home() {
           <nav className="nav">
             <div className="logo">AI <span>FACTORY</span></div>
             <a className="nav-link" href="#how">Что внедряем</a>
-            <a className="nav-button" href="#demo">Бесплатная диагностика</a>
+            <a className="nav-button" href="#demo">Мини-разбор в письме</a>
           </nav>
 
           <section className="hero">
@@ -538,7 +538,7 @@ export default function Home() {
               </p>
 
               <div className="actions">
-                <a className="primary" href="#demo">Бесплатная диагностика →</a>
+                <a className="primary" href="#demo">Получить мини-разбор →</a>
                 <a className="secondary" href="#how">Что именно внедряем</a>
               </div>
             </div>
@@ -672,25 +672,25 @@ export default function Home() {
                 </div>
               </div>
 
-              <a className="primary" href="#demo">Бесплатная диагностика →</a>
+              <a className="primary" href="#demo">Получить мини-разбор →</a>
             </div>
           </section>
 
           <section className="cta" id="demo">
             <div className="cta-grid">
               <div>
-                <div className="eyebrow">БЕСПЛАТНАЯ ДИАГНОСТИКА · 20 МИНУТ</div>
-                <h2>Сначала разберёмся, где заявки теряются в вашей воронке.</h2>
+                <div className="eyebrow">БЕСПЛАТНЫЙ МИНИ-РАЗБОР В ПИСЬМЕ</div>
+                <h2>Покажем в письме, где в заявках могут теряться деньги.</h2>
                 <p>
-                  Это короткий деловой созвон без обязательств. До разговора
-                  изучим ваш путь заявки, а на созвоне покажем, что имеет смысл
-                  исправить в первую очередь.
+                  Оставьте рабочую почту. Мы изучим путь обращения и отправим
+                  короткий персональный разбор: что проверить первым и подходит
+                  ли вам пилот AI Factory.
                 </p>
 
                 <ul className="diagnostic-list">
-                  <li>Проверим, откуда приходят обращения и кто их берёт в работу.</li>
-                  <li>Найдём один–три узких места: скорость ответа, статус или повторный контакт.</li>
-                  <li>Скажем честно, подходит ли вам пилот AI Factory.</li>
+                  <li>Проверим, откуда приходят обращения и кто получает их в работу.</li>
+                  <li>Отметим один–три места, которые стоит проверить: скорость ответа, статус или следующий шаг.</li>
+                  <li>Предложим один понятный шаг, с которого можно начать улучшение воронки.</li>
                 </ul>
               </div>
 
@@ -711,7 +711,10 @@ export default function Home() {
 
                 <input
                   required
-                  placeholder="Телефон или Telegram"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="Рабочий e-mail"
                   value={form.contact}
                   onChange={(e) => setForm({ ...form, contact: e.target.value })}
                 />
@@ -724,7 +727,7 @@ export default function Home() {
                 />
 
                 <button className="form-submit" type="submit" disabled={state === "sending"}>
-                  {state === "sending" ? "Отправляем..." : "Записаться на диагностику →"}
+                  {state === "sending" ? "Отправляем..." : "Получить мини-разбор на почту →"}
                 </button>
 
                 {message && <div className="message">{message}</div>}
