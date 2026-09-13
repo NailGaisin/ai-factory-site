@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Lead = {
   id: string;
@@ -103,34 +102,64 @@ export default function CrmDashboard({
   initialLeads,
   initialError,
 }: Props) {
-  const router = useRouter();
-
   const [dataLeads, setDataLeads] = useState<Lead[]>(initialLeads);
   const [tab, setTab] = useState<Tab>("overview");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const refreshInProgress = useRef(false);
 
   useEffect(() => {
     setDataLeads(initialLeads);
   }, [initialLeads]);
 
+  const refreshLeads = useCallback(async () => {
+    const activeElement = document.activeElement;
+    const isEditing =
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      activeElement instanceof HTMLSelectElement;
+
+    if (
+      document.visibilityState !== "visible" ||
+      isEditing ||
+      busy !== null ||
+      refreshInProgress.current
+    ) {
+      return;
+    }
+
+    refreshInProgress.current = true;
+
+    try {
+      const response = await fetch("/api/admin/leads", {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as {
+        ok?: boolean;
+        leads?: Lead[];
+      };
+
+      const currentElement = document.activeElement;
+      const startedEditing =
+        currentElement instanceof HTMLInputElement ||
+        currentElement instanceof HTMLTextAreaElement ||
+        currentElement instanceof HTMLSelectElement;
+
+      if (response.ok && data.ok && Array.isArray(data.leads) && !startedEditing) {
+        setDataLeads(data.leads);
+      }
+    } catch {
+      // The next background check will try again. No need to interrupt work.
+    } finally {
+      refreshInProgress.current = false;
+    }
+  }, [busy]);
+
   useEffect(() => {
     const refreshWhenReturning = () => {
-      const activeElement = document.activeElement;
-      const isEditing =
-        activeElement instanceof HTMLInputElement ||
-        activeElement instanceof HTMLTextAreaElement ||
-        activeElement instanceof HTMLSelectElement;
-
-      if (
-        document.visibilityState === "visible" &&
-        !isEditing &&
-        busy === null
-      ) {
-        router.refresh();
-      }
+      void refreshLeads();
     };
 
     window.addEventListener("focus", refreshWhenReturning);
@@ -142,7 +171,7 @@ export default function CrmDashboard({
       document.removeEventListener("visibilitychange", refreshWhenReturning);
       window.clearInterval(refreshTimer);
     };
-  }, [router, busy]);
+  }, [refreshLeads]);
 
   const activeLeads = useMemo(
     () => dataLeads.filter((lead) => lead.status !== "archived"),
@@ -489,7 +518,11 @@ export default function CrmDashboard({
         )
       );
 
-      setNotice("AI-анализ сохранён");
+      setNotice(
+        data.mode === "automatic"
+          ? "Автоматическая оценка сохранена"
+          : "AI-анализ сохранён"
+      );
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -1530,7 +1563,7 @@ export default function CrmDashboard({
 
           <button
             className="button"
-            onClick={() => router.refresh()}
+            onClick={() => void refreshLeads()}
           >
             Обновить
           </button>

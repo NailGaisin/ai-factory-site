@@ -1,6 +1,10 @@
 ﻿import { NextResponse } from "next/server";
 import { after } from "next/server";
 import { validateLead } from "@/lib/leads";
+import {
+  createAutomaticSalesAnalysis,
+  type LeadAnalysis,
+} from "@/lib/lead-analysis";
 import { getAdminSupabase, publicSupabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -35,14 +39,7 @@ function isRateLimited(request: Request) {
   return current.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
-type AiAnalysis = {
-  score: number;
-  temperature: "hot" | "warm" | "cold";
-  summary: string;
-  needs: string;
-  recommendedAction: string;
-  firstReply: string;
-};
+type AiAnalysis = LeadAnalysis;
 
 type LeadAttribution = {
   leadSource: "direct" | "referral" | "utm";
@@ -97,7 +94,7 @@ async function analyzeLeadWithAI(input: {
   niche: string;
 }): Promise<AiAnalysis | null> {
   if (!isAIAnalysisEnabled()) {
-    return null;
+    return createAutomaticSalesAnalysis(input);
   }
 
   const controller = new AbortController();
@@ -250,7 +247,7 @@ async function sendTelegram(
 
   if (ai) {
     message +=
-      `\n🔥 AI: ${ai.temperature.toUpperCase()}\n` +
+      `\n📊 ОЦЕНКА: ${ai.temperature.toUpperCase()}\n` +
       `Оценка: ${ai.score}/100\n\n` +
       `Резюме: ${ai.summary}\n` +
       `Потребность: ${ai.needs}\n` +
@@ -261,7 +258,7 @@ async function sendTelegram(
       "\n🤖 AI-анализ запускается. Результат придёт следующим сообщением.";
   } else {
     message +=
-      "\n🤖 AI-анализ временно выключен. Заявка сохранена в CRM.";
+      "\n📊 Автоматическая оценка будет сохранена в CRM.";
   }
 
   const controller = new AbortController();
@@ -420,9 +417,7 @@ export async function POST(request: Request) {
   // AI-результат придёт следующим сообщением, когда будет готов.
   const notificationSent = await sendTelegram(input, null, attribution);
 
-  if (isAIAnalysisEnabled()) {
-    after(() => processAI(leadId, input, attribution));
-  }
+  after(() => processAI(leadId, input, attribution));
 
   return NextResponse.json(
     {

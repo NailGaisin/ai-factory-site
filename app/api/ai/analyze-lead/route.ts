@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  createAutomaticSalesAnalysis,
+  type LeadAnalysis,
+} from "@/lib/lead-analysis";
 
 export const dynamic = "force-dynamic";
 
@@ -10,14 +14,7 @@ type LeadFields = {
   message: string;
 };
 
-type Analysis = {
-  score: number;
-  temperature: "hot" | "warm" | "cold";
-  summary: string;
-  needs: string;
-  recommendedAction: string;
-  firstReply: string;
-};
+type Analysis = LeadAnalysis;
 
 function text(value: unknown, limit = 1_500) {
   return typeof value === "string"
@@ -96,23 +93,20 @@ function parseAnalysis(value: unknown): Analysis | null {
 }
 
 export async function POST(request: Request) {
-  if (process.env.AI_ANALYSIS_ENABLED === "false") {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "AI-анализ временно отключён, пока сайт работает в облаке.",
-      },
-      { status: 503 }
-    );
-  }
-
   const lead = readLead(await request.json().catch(() => null));
   if (!lead) {
     return NextResponse.json(
       { ok: false, error: "Передайте данные заявки для анализа." },
       { status: 400 }
     );
+  }
+
+  if (process.env.AI_ANALYSIS_ENABLED === "false") {
+    return NextResponse.json({
+      ok: true,
+      mode: "automatic",
+      analysis: createAutomaticSalesAnalysis(lead),
+    });
   }
 
   const controller = new AbortController();
@@ -179,7 +173,7 @@ score — число от 0 до 100. temperature: hot для 75–100, warm д�
       );
     }
 
-    return NextResponse.json({ ok: true, analysis });
+    return NextResponse.json({ ok: true, mode: "ai", analysis });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       return NextResponse.json(
