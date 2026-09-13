@@ -420,6 +420,31 @@ export default function Home() {
 
         .cta p { color: #94a3b8; line-height: 1.6; }
 
+        .diagnostic-list {
+          display: grid;
+          gap: 10px;
+          margin: 26px 0 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        .diagnostic-list li {
+          position: relative;
+          padding-left: 26px;
+          color: #cbd5e1;
+          font-size: 14px;
+          line-height: 1.45;
+        }
+
+        .diagnostic-list li::before {
+          content: "✓";
+          position: absolute;
+          left: 0;
+          top: -1px;
+          color: #93c5fd;
+          font-weight: 800;
+        }
+
         form {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -490,7 +515,7 @@ export default function Home() {
           <nav className="nav">
             <div className="logo">AI <span>FACTORY</span></div>
             <a className="nav-link" href="#how">Что внедряем</a>
-            <a className="nav-button" href="#demo">Получить разбор</a>
+            <a className="nav-button" href="#demo">Бесплатная диагностика</a>
           </nav>
 
           <section className="hero">
@@ -513,7 +538,7 @@ export default function Home() {
               </p>
 
               <div className="actions">
-                <a className="primary" href="#demo">Получить разбор воронки →</a>
+                <a className="primary" href="#demo">Бесплатная диагностика →</a>
                 <a className="secondary" href="#how">Что именно внедряем</a>
               </div>
             </div>
@@ -647,19 +672,26 @@ export default function Home() {
                 </div>
               </div>
 
-              <a className="primary" href="#demo">Получить разбор воронки →</a>
+              <a className="primary" href="#demo">Бесплатная диагностика →</a>
             </div>
           </section>
 
           <section className="cta" id="demo">
             <div className="cta-grid">
               <div>
-                <div className="eyebrow">ПЕРВЫЙ ШАГ</div>
-                <h2>Сначала найдём деньги, которые уже лежат во входящих заявках.</h2>
+                <div className="eyebrow">БЕСПЛАТНАЯ ДИАГНОСТИКА · 20 МИНУТ</div>
+                <h2>Сначала разберёмся, где заявки теряются в вашей воронке.</h2>
                 <p>
-                  Оставьте контакты. На разборе посмотрим ваш текущий путь заявки
-                  и покажем, какие точки контроля дадут наибольший эффект первыми.
+                  Это короткий деловой созвон без обязательств. До разговора
+                  изучим ваш путь заявки, а на созвоне покажем, что имеет смысл
+                  исправить в первую очередь.
                 </p>
+
+                <ul className="diagnostic-list">
+                  <li>Проверим, откуда приходят обращения и кто их берёт в работу.</li>
+                  <li>Найдём один–три узких места: скорость ответа, статус или повторный контакт.</li>
+                  <li>Скажем честно, подходит ли вам пилот AI Factory.</li>
+                </ul>
               </div>
 
               <form onSubmit={submit}>
@@ -692,7 +724,7 @@ export default function Home() {
                 />
 
                 <button className="form-submit" type="submit" disabled={state === "sending"}>
-                  {state === "sending" ? "Отправляем..." : "Получить разбор →"}
+                  {state === "sending" ? "Отправляем..." : "Записаться на диагностику →"}
                 </button>
 
                 {message && <div className="message">{message}</div>}
