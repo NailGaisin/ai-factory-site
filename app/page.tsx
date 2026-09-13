@@ -43,7 +43,7 @@ export default function Home() {
 
       if (response.ok) {
         setState("success");
-        setMessage("Заявка принята. Подготовим мини-разбор и отправим его на указанную почту.");
+        setMessage("Заявка принята. Подготовим мини-разбор и ответим в указанном мессенджере или по e-mail.");
         setForm(initialForm);
       } else {
         setState("error");
@@ -515,7 +515,7 @@ export default function Home() {
           <nav className="nav">
             <div className="logo">AI <span>FACTORY</span></div>
             <a className="nav-link" href="#how">Что внедряем</a>
-            <a className="nav-button" href="#demo">Мини-разбор в письме</a>
+            <a className="nav-button" href="#demo">Мини-разбор в переписке</a>
           </nav>
 
           <section className="hero">
@@ -679,12 +679,12 @@ export default function Home() {
           <section className="cta" id="demo">
             <div className="cta-grid">
               <div>
-                <div className="eyebrow">БЕСПЛАТНЫЙ МИНИ-РАЗБОР В ПИСЬМЕ</div>
-                <h2>Покажем в письме, где в заявках могут теряться деньги.</h2>
+                <div className="eyebrow">БЕСПЛАТНЫЙ МИНИ-РАЗБОР В ПЕРЕПИСКЕ</div>
+                <h2>Покажем в переписке, где в заявках могут теряться деньги.</h2>
                 <p>
-                  Оставьте рабочую почту. Мы изучим путь обращения и отправим
-                  короткий персональный разбор: что проверить первым и подходит
-                  ли вам пилот AI Factory.
+                  Оставьте удобный способ связи: Telegram, WhatsApp, другой
+                  мессенджер или e-mail. Мы изучим путь обращения и отправим
+                  короткий персональный разбор.
                 </p>
 
                 <ul className="diagnostic-list">
@@ -711,10 +711,7 @@ export default function Home() {
 
                 <input
                   required
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="Рабочий e-mail"
+                  placeholder="Telegram, WhatsApp или e-mail"
                   value={form.contact}
                   onChange={(e) => setForm({ ...form, contact: e.target.value })}
                 />
@@ -727,7 +724,7 @@ export default function Home() {
                 />
 
                 <button className="form-submit" type="submit" disabled={state === "sending"}>
-                  {state === "sending" ? "Отправляем..." : "Получить мини-разбор на почту →"}
+                  {state === "sending" ? "Отправляем..." : "Получить мини-разбор →"}
                 </button>
 
                 {message && <div className="message">{message}</div>}
