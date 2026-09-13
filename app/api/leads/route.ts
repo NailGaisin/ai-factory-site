@@ -48,8 +48,19 @@ type LeadAttribution = {
   utmCampaign: string | null;
 };
 
+function shouldUseAutomaticAnalysis() {
+  // Local Ollama is only reachable during development. A production deploy
+  // must be given an explicit remote model URL; otherwise use the built-in,
+  // immediate and deterministic qualification instead of waiting for a port
+  // that does not exist on Netlify.
+  return (
+    process.env.AI_ANALYSIS_ENABLED === "false" ||
+    (process.env.NODE_ENV === "production" && !process.env.OLLAMA_BASE_URL)
+  );
+}
+
 function isAIAnalysisEnabled() {
-  return process.env.AI_ANALYSIS_ENABLED !== "false";
+  return !shouldUseAutomaticAnalysis();
 }
 
 function trackingValue(value: unknown) {
@@ -92,8 +103,8 @@ async function analyzeLeadWithAI(input: {
   company: string;
   contact: string;
   niche: string;
-}): Promise<AiAnalysis | null> {
-  if (!isAIAnalysisEnabled()) {
+}): Promise<AiAnalysis> {
+  if (shouldUseAutomaticAnalysis()) {
     return createAutomaticSalesAnalysis(input);
   }
 
@@ -169,13 +180,13 @@ score:
         "Ollama error:",
         response.status
       );
-      return null;
+      return createAutomaticSalesAnalysis(input);
     }
 
     const data = await response.json();
 
     if (!data.response) {
-      return null;
+      return createAutomaticSalesAnalysis(input);
     }
 
     const parsed = JSON.parse(data.response);
@@ -190,7 +201,7 @@ score:
         parsed.temperature
       )
     ) {
-      return null;
+      return createAutomaticSalesAnalysis(input);
     }
 
     return {
@@ -210,7 +221,9 @@ score:
       "AI analysis error:",
       error
     );
-    return null;
+    // Netlify cannot reach a model running on the developer's computer.
+    // A lead must still receive a useful, saved analysis when that happens.
+    return createAutomaticSalesAnalysis(input);
   } finally {
     clearTimeout(timeout);
   }

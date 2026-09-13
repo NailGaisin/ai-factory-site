@@ -92,6 +92,24 @@ function parseAnalysis(value: unknown): Analysis | null {
   return analysis;
 }
 
+function automaticResponse(lead: LeadFields) {
+  return NextResponse.json({
+    ok: true,
+    mode: "automatic",
+    analysis: createAutomaticSalesAnalysis(lead),
+  });
+}
+
+function shouldUseAutomaticAnalysis() {
+  // A production deployment cannot access Ollama running on a developer PC.
+  // A remote model endpoint must be configured explicitly; otherwise the
+  // manager receives the useful automatic qualification immediately.
+  return (
+    process.env.AI_ANALYSIS_ENABLED === "false" ||
+    (process.env.NODE_ENV === "production" && !process.env.OLLAMA_BASE_URL)
+  );
+}
+
 export async function POST(request: Request) {
   const lead = readLead(await request.json().catch(() => null));
   if (!lead) {
@@ -101,12 +119,8 @@ export async function POST(request: Request) {
     );
   }
 
-  if (process.env.AI_ANALYSIS_ENABLED === "false") {
-    return NextResponse.json({
-      ok: true,
-      mode: "automatic",
-      analysis: createAutomaticSalesAnalysis(lead),
-    });
+  if (shouldUseAutomaticAnalysis()) {
+    return automaticResponse(lead);
   }
 
   const controller = new AbortController();
@@ -153,10 +167,8 @@ score — число от 0 до 100. temperature: hot для 75–100, warm д�
     });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { ok: false, error: `AI-сервис недоступен (код ${response.status}).` },
-        { status: 502 }
-      );
+      console.error("AI service error:", response.status);
+      return automaticResponse(lead);
     }
 
     const data = (await response.json()) as { response?: unknown };
@@ -167,26 +179,15 @@ score — число от 0 до 100. temperature: hot для 75–100, warm д�
     const analysis = parseAnalysis(parsed);
 
     if (!analysis) {
-      return NextResponse.json(
-        { ok: false, error: "AI вернул неполный результат. Запустите анализ ещё раз." },
-        { status: 502 }
-      );
+      console.error("AI service returned an incomplete analysis.");
+      return automaticResponse(lead);
     }
 
     return NextResponse.json({ ok: true, mode: "ai", analysis });
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      return NextResponse.json(
-        { ok: false, error: "AI-анализ занял слишком много времени." },
-        { status: 504 }
-      );
-    }
-
     console.error("AI analyze error:", error);
-    return NextResponse.json(
-      { ok: false, error: "Не удалось выполнить AI-анализ." },
-      { status: 500 }
-    );
+    // The CRM stays usable if a local or remote model is unavailable.
+    return automaticResponse(lead);
   } finally {
     clearTimeout(timeout);
   }
